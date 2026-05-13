@@ -82,6 +82,7 @@ None yet.
 
 ### Blockers/Concerns
 
+- [Pre-Phase-3 REQUIRED]: OPS-02 — tables must not grow infinitely. balance_audit_log, idempotency_keys, and closed accounts all need retention/partitioning strategy before Phase 3 streaming generates high-volume audit entries. Must be addressed in Phase 2 or 3 planning.
 - [Phase 3 risk]: Streaming layer is the highest-risk phase — novel engineering: mathematical projection settlement via System.nanoTime(), concurrent StreamRegistry correctness under mixed discrete+streaming load. Plan for a dedicated concurrency stress test.
 - [Phase 6 risk]: Embedding test must verify the starter inside a synthetic host application with no bean collisions — requires careful @ConditionalOnMissingBean coverage in engine-spring.
 
@@ -94,6 +95,7 @@ None yet.
 | Tags | TAG-HIST-01: Historical aggregate query | v2 | Init |
 | Observability | OBS-01: OpenTelemetry trace context | v2 | Init |
 | Clients | CLT-01: Typed Java client library | v2 | Init |
+| Operations | OPS-02: Data retention — tables must not grow infinitely. balance_audit_log needs Postgres range partitioning on recorded_at with partition pruning; idempotency_keys needs a TTL sweep (delete rows older than replay window, e.g. 48h); closed accounts need a soft-archive or hard-delete policy. Must be resolved before Phase 3 (streaming generates high-volume audit log entries). | pre-Phase-3 | Phase 1 |
 | Architecture | PKG-EXT-01: Repository port interfaces for enterprise swapping — engine-core repos currently extend JpaRepository directly; for clean enterprise-tier override (JDBC, custom ORM) they should be plain port interfaces with JPA adapters in engine-spring guarded by @ConditionalOnMissingBean | Phase 6 | Phase 1 |
 
 ## Session Continuity
