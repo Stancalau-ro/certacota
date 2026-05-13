@@ -17,7 +17,6 @@ import io.certacota.engine.core.service.AccountService;
 import io.certacota.engine.spring.config.TokenEngineProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,51 +38,63 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountResponse createAccount(CreateAccountRequest request) {
         log.info("Creating account: {}", request.id());
+
+        return idempotencyKeyRepository
+            .findByIdempotencyKeyAndOperation(request.idempotencyKey(), "ACCOUNT_CREATE")
+            .map(ik -> {
+                log.info("Returning cached idempotent response for key: {}", request.idempotencyKey());
+                return deserialize(ik.getResponseBody(), AccountResponse.class);
+            })
+            .orElseGet(() -> doCreateAccount(request));
+    }
+
+    private AccountResponse doCreateAccount(CreateAccountRequest request) {
+        BigDecimal initialBalance = request.initialBalance() != null
+            ? request.initialBalance() : BigDecimal.ZERO;
+
+        BigDecimal effectiveFloor = request.balanceFloor() != null
+            ? request.balanceFloor()
+            : properties.getBalanceFloor();
+        if (initialBalance.compareTo(effectiveFloor) < 0) {
+            log.warn("Balance floor violation at creation: {} is below floor {}", initialBalance, effectiveFloor);
+            throw new BalanceFloorViolationException(
+                "Balance " + initialBalance + " is below floor " + effectiveFloor);
+        }
+
+        Account account = accountRepository.save(Account.builder()
+            .id(request.id())
+            .status(AccountStatus.ACTIVE)
+            .balance(initialBalance)
+            .balanceFloor(request.balanceFloor())
+            .metadata(request.metadata())
+            .createdAt(OffsetDateTime.now())
+            .updatedAt(OffsetDateTime.now())
+            .build());
+
+        auditLogRepository.save(BalanceAuditLog.builder()
+            .accountId(account.getId())
+            .operation("ACCOUNT_CREATED")
+            .amount(initialBalance)
+            .balanceBefore(BigDecimal.ZERO)
+            .balanceAfter(initialBalance)
+            .idempotencyKey(request.idempotencyKey())
+            .recordedAt(OffsetDateTime.now())
+            .build());
+
+        AccountResponse response = AccountResponse.from(account);
+
         try {
-            idempotencyKeyRepository.saveAndFlush(IdempotencyKey.builder()
+            idempotencyKeyRepository.save(IdempotencyKey.builder()
                 .idempotencyKey(request.idempotencyKey())
                 .operation("ACCOUNT_CREATE")
-                .responseBody("")
+                .responseBody(objectMapper.writeValueAsString(response))
                 .createdAt(OffsetDateTime.now())
                 .build());
-
-            BigDecimal initialBalance = request.initialBalance() != null
-                ? request.initialBalance() : BigDecimal.ZERO;
-            enforceBalanceFloor(null, initialBalance);
-
-            Account account = accountRepository.save(Account.builder()
-                .id(request.id())
-                .status(AccountStatus.ACTIVE)
-                .balance(initialBalance)
-                .balanceFloor(request.balanceFloor())
-                .metadata(request.metadata())
-                .createdAt(OffsetDateTime.now())
-                .updatedAt(OffsetDateTime.now())
-                .build());
-
-            auditLogRepository.save(BalanceAuditLog.builder()
-                .accountId(account.getId())
-                .operation("ACCOUNT_CREATED")
-                .amount(initialBalance)
-                .balanceBefore(BigDecimal.ZERO)
-                .balanceAfter(initialBalance)
-                .idempotencyKey(request.idempotencyKey())
-                .recordedAt(OffsetDateTime.now())
-                .build());
-
-            AccountResponse response = AccountResponse.from(account);
-
-            storeIdempotencyResponse(request.idempotencyKey(), "ACCOUNT_CREATE", response);
-
-            return response;
-
-        } catch (DataIntegrityViolationException ex) {
-            return idempotencyKeyRepository
-                .findByIdempotencyKeyAndOperation(request.idempotencyKey(), "ACCOUNT_CREATE")
-                .map(ik -> deserialize(ik.getResponseBody(), AccountResponse.class))
-                .orElseThrow(() -> new IllegalStateException(
-                    "Constraint violation but no cached response found", ex));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to persist idempotency key", e);
         }
+
+        return response;
     }
 
     @Override
@@ -110,29 +121,6 @@ public class AccountServiceImpl implements AccountService {
         account.close();
         Account saved = accountRepository.save(account);
         return AccountResponse.from(saved);
-    }
-
-    private void enforceBalanceFloor(Account account, BigDecimal resultingBalance) {
-        BigDecimal effectiveFloor = (account != null && account.getBalanceFloor() != null)
-            ? account.getBalanceFloor()
-            : properties.getBalanceFloor();
-        if (resultingBalance.compareTo(effectiveFloor) < 0) {
-            log.warn("Balance floor violation: {} is below floor {}", resultingBalance, effectiveFloor);
-            throw new BalanceFloorViolationException(
-                "Balance " + resultingBalance + " is below floor " + effectiveFloor);
-        }
-    }
-
-    private void storeIdempotencyResponse(String idempotencyKey, String operation, AccountResponse response) {
-        idempotencyKeyRepository.findByIdempotencyKeyAndOperation(idempotencyKey, operation)
-            .ifPresent(ik -> {
-                try {
-                    ik.updateResponseBody(objectMapper.writeValueAsString(response));
-                    idempotencyKeyRepository.save(ik);
-                } catch (Exception e) {
-                    throw new IllegalStateException("Failed to serialize idempotency response", e);
-                }
-            });
     }
 
     private <T> T deserialize(String json, Class<T> type) {

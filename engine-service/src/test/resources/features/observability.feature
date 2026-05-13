@@ -4,7 +4,7 @@ Feature: Actuator and metrics endpoints
     Given the application is started with a live Postgres instance via Testcontainers
     When I request GET /actuator/health
     Then the response status is 200
-    And the response body contains "status":"UP"
+    And the response body contains '"status":"UP"'
 
   Scenario: Prometheus metrics endpoint is reachable
     Given the application is running

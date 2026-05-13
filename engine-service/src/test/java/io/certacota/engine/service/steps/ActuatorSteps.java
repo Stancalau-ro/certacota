@@ -46,7 +46,7 @@ public class ActuatorSteps {
         log.info("Application is running on port {}", port);
     }
 
-    @When("I request GET /actuator/health")
+    @When("^I request GET /actuator/health$")
     public void requestGetActuatorHealth() {
         String url = "http://localhost:" + port + "/actuator/health";
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
@@ -54,7 +54,7 @@ public class ActuatorSteps {
         log.info("Actuator health response: {} {}", response.getStatusCode(), response.getBody());
     }
 
-    @When("I request GET /actuator/prometheus")
+    @When("^I request GET /actuator/prometheus$")
     public void requestGetActuatorPrometheus() {
         String url = "http://localhost:" + port + "/actuator/prometheus";
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);

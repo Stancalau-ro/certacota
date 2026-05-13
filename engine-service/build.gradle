@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+    implementation project(':engine-core')
     implementation project(':engine-spring')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -35,4 +36,6 @@ tasks.named('test') {
     useJUnitPlatform()
     systemProperty 'cucumber.junit-platform.naming-strategy', 'long'
     systemProperty 'cucumber.plugin', 'pretty,html:build/reports/cucumber.html'
+    systemProperty 'api.version', '1.44'
+    environment 'DOCKER_HOST', 'tcp://localhost:2375'
 }

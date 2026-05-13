@@ -6,6 +6,12 @@ management:
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
   metrics:
     tags:
       application: token-engine
@@ -20,6 +26,9 @@ spring:
   jackson:
     deserialization:
       use-big-decimal-for-floats: true
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
 
 token-engine:
   balance-floor: 0

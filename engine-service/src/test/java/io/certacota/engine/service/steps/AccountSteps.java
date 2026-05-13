@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.certacota.engine.core.repository.AccountRepository;
 import io.certacota.engine.core.repository.BalanceAuditLogRepository;
+import io.cucumber.java.PendingException;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -101,5 +103,15 @@ public class AccountSteps {
     @Then("the response status is {int}")
     public void responseStatusIs(int expectedStatus) {
         assertThat(sharedContext.getLastResponse().getStatusCode().value()).isEqualTo(expectedStatus);
+    }
+
+    @Given("account {string} exists with an active streaming transaction")
+    public void accountExistsWithActiveStreamingTransaction(String accountId) {
+        throw new PendingException("Stream registry not implemented until Phase 3");
+    }
+
+    @And("the error message mentions active streaming transactions")
+    public void errorMessageMentionsActiveStreamingTransactions() {
+        throw new PendingException("Stream registry not implemented until Phase 3");
     }
 }
