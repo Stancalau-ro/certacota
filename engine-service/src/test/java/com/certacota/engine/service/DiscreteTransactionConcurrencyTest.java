@@ -60,7 +60,7 @@ class DiscreteTransactionConcurrencyTest {
         setupHeaders.setContentType(MediaType.APPLICATION_JSON);
         Map<String, Object> setupBody = Map.of(
             "id", "concurrent-debit-001",
-            "initialBalance", new BigDecimal("200.00"),
+            "initialBalance", new BigDecimal("100.00"),
             "idempotencyKey", "setup-concurrent"
         );
         restTemplate.exchange(setupUrl, HttpMethod.POST, new HttpEntity<>(setupBody, setupHeaders), String.class);
@@ -112,8 +112,11 @@ class DiscreteTransactionConcurrencyTest {
         BigDecimal finalBalance = accountRepository.findById("concurrent-debit-001")
             .orElseThrow(() -> new AssertionError("Account not found after concurrent test"))
             .getBalance();
-        BigDecimal expectedBalance = new BigDecimal("200.00").subtract(amount.multiply(BigDecimal.valueOf(successCount.get())));
+        BigDecimal expectedBalance = new BigDecimal("100.00").subtract(amount.multiply(BigDecimal.valueOf(successCount.get())));
         assertThat(finalBalance.compareTo(expectedBalance)).isEqualTo(0);
-        assertThat(failCount.get()).isGreaterThanOrEqualTo(0);
+        // With balance=100 and 20 threads each debiting 10, at most 10 can succeed — some must fail
+        assertThat(successCount.get()).isLessThanOrEqualTo(10);
+        assertThat(failCount.get()).isGreaterThan(0);
+        assertThat(finalBalance.compareTo(BigDecimal.ZERO)).isGreaterThanOrEqualTo(0);
     }
 }
