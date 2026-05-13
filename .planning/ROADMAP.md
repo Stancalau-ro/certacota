@@ -51,9 +51,19 @@ Plans:
   5. A rake-enabled discrete transaction executes as an atomic three-way debit/credit/credit; rake rate is resolved from caller-supplied metadata at post time; the debit to the from-account equals the sum of credits; zero-rake, full-rake, and hybrid configurations all produce balanced arithmetic
 **Plans**: 3 plans
 Plans:
+**Wave 1**
 - [ ] 02-01-PLAN.md — Domain foundation: Flyway V4/V5 migrations, engine-core domain contracts (entity, enum, repositories, DTOs, service interface, findWithLock)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 02-02-PLAN.md — Service layer: TransactionServiceImpl (credit, debit, rake), TokenEngineProperties RakeProperties, TransactionController, autoconfigure wiring
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 02-03-PLAN.md — Acceptance tests: four Cucumber feature files (credit, debit, metadata, rake) + concurrent debit stress test (DTX-04)
+
+Cross-cutting constraints:
+- `PESSIMISTIC_WRITE` (`SELECT FOR UPDATE`) on account row must be acquired BEFORE the balance floor check in every debit path
+- Three-row rake model: one DEBIT + two CREDIT rows per rake-enabled transaction, inside a single `@Transactional`
+- BigDecimal with `RoundingMode.DOWN` for all token arithmetic; no floating-point in any rake path
 
 ### Phase 3: Streaming Transactions
 **Goal**: Rate-based streaming drains start, run in-memory, and settle to Postgres using mathematical projection; forward balance estimation is correct across all concurrent in-flight streams; minimum amount and increment billing parameters are enforced on settlement; the engine auto-terminates streams at balance exhaustion using a priority-queue scheduler
@@ -115,7 +125,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
-| 2. Discrete Transactions | 0/3 | Not started | - |
+| 2. Discrete Transactions | 0/3 | Ready to execute | - |
 | 3. Streaming Transactions | 0/TBD | Not started | - |
 | 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
