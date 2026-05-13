@@ -46,12 +46,17 @@ This phase produces the foundational infrastructure every subsequent phase build
   - Stored as a nullable `balance_floor` column; enforcement reads column value with global fallback
 - **D-12:** Floor enforcement: reject any operation that would take balance below the effective floor; check occurs before the write
 
+### Testing
+- **D-13:** BDD with Cucumber — integration and acceptance tests use Cucumber (cucumber-spring, cucumber-junit5); feature files written in Gherkin; step definitions live in `engine-service` alongside other integration tests
+- **D-14:** Cucumber feature files cover the Phase 1 success criteria scenarios (account CRUD, idempotency, floor enforcement, audit log, Actuator UP)
+
 ### Claude's Discretion
 - Package naming convention inside each module (e.g., `io.certacota.engine.core.*`)
 - Exact Testcontainers version and `@ServiceConnection` wiring pattern
 - Actuator endpoint exposure configuration in `application.yml`
 - REST API path prefix (e.g., `/api/v1/accounts`)
 - Idempotency key column naming and index strategy
+- Cucumber report format and output directory
 
 </decisions>
 
