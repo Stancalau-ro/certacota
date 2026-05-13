@@ -49,7 +49,11 @@ Plans:
   3. A Testcontainers integration test fires N concurrent discrete debits against a single account; the final committed balance equals the mathematically correct result with no double-spend and no lost update
   4. Metadata supplied at transaction creation flows through unchanged to all audit log entries associated with that transaction; metadata cannot be altered after creation
   5. A rake-enabled discrete transaction executes as an atomic three-way debit/credit/credit; rake rate is resolved from caller-supplied metadata at post time; the debit to the from-account equals the sum of credits; zero-rake, full-rake, and hybrid configurations all produce balanced arithmetic
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 02-01-PLAN.md — Domain foundation: Flyway V4/V5 migrations, engine-core domain contracts (entity, enum, repositories, DTOs, service interface, findWithLock)
+- [ ] 02-02-PLAN.md — Service layer: TransactionServiceImpl (credit, debit, rake), TokenEngineProperties RakeProperties, TransactionController, autoconfigure wiring
+- [ ] 02-03-PLAN.md — Acceptance tests: four Cucumber feature files (credit, debit, metadata, rake) + concurrent debit stress test (DTX-04)
 
 ### Phase 3: Streaming Transactions
 **Goal**: Rate-based streaming drains start, run in-memory, and settle to Postgres using mathematical projection; forward balance estimation is correct across all concurrent in-flight streams; minimum amount and increment billing parameters are enforced on settlement; the engine auto-terminates streams at balance exhaustion using a priority-queue scheduler
@@ -111,7 +115,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
-| 2. Discrete Transactions | 0/TBD | Not started | - |
+| 2. Discrete Transactions | 0/3 | Not started | - |
 | 3. Streaming Transactions | 0/TBD | Not started | - |
 | 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
