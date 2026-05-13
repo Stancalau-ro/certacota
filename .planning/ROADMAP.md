@@ -52,7 +52,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 **Wave 1**
-- [ ] 02-01-PLAN.md — Domain foundation: Flyway V4/V5 migrations, engine-core domain contracts (entity, enum, repositories, DTOs, service interface, findWithLock)
+- [x] 02-01-PLAN.md — Domain foundation: Flyway V4/V5 migrations, engine-core domain contracts (entity, enum, repositories, DTOs, service interface, findWithLock)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 02-02-PLAN.md — Service layer: TransactionServiceImpl (credit, debit, rake), TokenEngineProperties RakeProperties, TransactionController, autoconfigure wiring
@@ -125,7 +125,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
-| 2. Discrete Transactions | 0/3 | Ready to execute | - |
+| 2. Discrete Transactions | 1/3 | In progress | - |
 | 3. Streaming Transactions | 0/TBD | Not started | - |
 | 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
