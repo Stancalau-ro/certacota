@@ -8,6 +8,7 @@ import com.certacota.engine.core.repository.AccountRepository;
 import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.DiscreteTransactionRepository;
 import com.certacota.engine.spring.config.TokenEngineProperties;
+import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import io.cucumber.java.en.Then;
@@ -63,6 +64,15 @@ public class TransactionSteps {
                 return false;
             }
         });
+    }
+
+    @Before
+    public void resetRakeProperties() {
+        TokenEngineProperties.RakeProperties rake = tokenEngineProperties.getRake();
+        rake.setEnabled(false);
+        rake.setMetadataKey("transaction_type");
+        rake.getRates().clear();
+        rake.setPlatformAccountId(null);
     }
 
     @Given("an account {string} exists with balance {bigdecimal}")
