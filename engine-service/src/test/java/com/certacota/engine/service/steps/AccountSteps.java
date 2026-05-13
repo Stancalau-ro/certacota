@@ -93,6 +93,14 @@ public class AccountSteps {
         log.info("Close account response: {} {}", response.getStatusCode(), response.getBody());
     }
 
+    @Then("account {string} has committed balance {bigdecimal}")
+    public void accountHasCommittedBalance(String accountId, BigDecimal expectedBalance) {
+        accountRepository.findById(accountId).ifPresentOrElse(
+            account -> assertThat(account.getBalance().compareTo(expectedBalance)).isEqualTo(0),
+            () -> { throw new AssertionError("Account " + accountId + " not found"); }
+        );
+    }
+
     @Then("account {string} has status CLOSED")
     public void accountHasStatusClosed(String accountId) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
