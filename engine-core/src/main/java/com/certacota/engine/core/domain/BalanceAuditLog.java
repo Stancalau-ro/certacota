@@ -47,6 +47,6 @@ public class BalanceAuditLog {
     @Column(name = "transaction_id", updatable = false)
     private Long transactionId;
 
-    @Column(name = "recorded_at", updatable = false)
+    @Column(name = "recorded_at", nullable = false, updatable = false)
     private OffsetDateTime recordedAt;
 }
