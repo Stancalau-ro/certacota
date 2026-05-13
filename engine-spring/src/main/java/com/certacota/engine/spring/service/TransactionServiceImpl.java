@@ -164,12 +164,21 @@ public class TransactionServiceImpl implements TransactionService {
         BigDecimal rakeAmount = request.amount().multiply(rakeRate).setScale(18, RoundingMode.DOWN);
         BigDecimal toAccountAmount = request.amount().subtract(rakeAmount);
 
+        // Lock order: from → to → platform (consistent ordering prevents deadlock)
+        Account toAccount = accountRepository.findWithLock(request.toAccountId())
+            .orElseThrow(() -> new AccountNotFoundException(request.toAccountId()));
+
+        String platformAccountId = properties.getRake().getPlatformAccountId();
+        Account platformAccount = null;
+        if (platformAccountId != null && rakeAmount.compareTo(BigDecimal.ZERO) > 0) {
+            platformAccount = accountRepository.findWithLock(platformAccountId)
+                .orElseThrow(() -> new AccountNotFoundException(platformAccountId));
+        }
+
         BigDecimal fromBalanceBefore = fromAccount.getBalance();
         fromAccount.debit(request.amount());
         accountRepository.save(fromAccount);
 
-        Account toAccount = accountRepository.findById(request.toAccountId())
-            .orElseThrow(() -> new AccountNotFoundException(request.toAccountId()));
         BigDecimal toBalanceBefore = toAccount.getBalance();
         toAccount.credit(toAccountAmount);
         accountRepository.save(toAccount);
@@ -205,10 +214,7 @@ public class TransactionServiceImpl implements TransactionService {
             .recordedAt(OffsetDateTime.now())
             .build());
 
-        String platformAccountId = properties.getRake().getPlatformAccountId();
-        if (platformAccountId != null && rakeAmount.compareTo(BigDecimal.ZERO) > 0) {
-            Account platformAccount = accountRepository.findById(platformAccountId)
-                .orElseThrow(() -> new AccountNotFoundException(platformAccountId));
+        if (platformAccount != null) {
             BigDecimal platformBalanceBefore = platformAccount.getBalance();
             platformAccount.credit(rakeAmount);
             accountRepository.save(platformAccount);
