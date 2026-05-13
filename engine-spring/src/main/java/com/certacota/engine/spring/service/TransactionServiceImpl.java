@@ -130,6 +130,9 @@ public class TransactionServiceImpl implements TransactionService {
         BigDecimal rakeRate = properties.getRake().getRateFor(request.metadata());
 
         if (rakeRate.compareTo(BigDecimal.ZERO) > 0 && request.toAccountId() != null) {
+            if (request.toAccountId().isBlank()) {
+                throw new IllegalArgumentException("toAccountId must not be blank when provided");
+            }
             return doDebitWithRake(request, account, rakeRate);
         }
 

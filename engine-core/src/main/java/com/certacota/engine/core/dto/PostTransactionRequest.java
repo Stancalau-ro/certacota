@@ -1,7 +1,6 @@
 package com.certacota.engine.core.dto;
 
 import com.certacota.engine.core.domain.TransactionType;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -14,6 +13,6 @@ public record PostTransactionRequest(
     @NotNull @Positive BigDecimal amount,
     Map<String, Object> metadata,
     @NotNull String idempotencyKey,
-    @NotBlank String toAccountId
+    String toAccountId
 ) {
 }
