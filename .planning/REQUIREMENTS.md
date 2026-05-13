@@ -38,6 +38,15 @@
 - [ ] **STR-04**: Engine processes concurrent streaming and discrete transactions against the same balance with full correctness
 - [ ] **STR-05**: Engine settles streaming drain atomically to Postgres on stream stop; in-memory and durable state are never permanently divergent
 - [ ] **STR-06**: Engine uses BigDecimal (not floating-point) for all token rate arithmetic
+- [ ] **STR-07**: Streaming TX accepts an optional `minimumAmount` parameter; if the stream is stopped by a client-initiated close before `minimumAmount` has been drained, the engine charges `minimumAmount` instead of actual elapsed amount; error-terminated streams always charge actual elapsed amount (minimum is waived)
+- [ ] **STR-08**: Streaming TX accepts an optional `increment` parameter (token amount per billing unit); when set, settlement rounds down to the nearest complete increment (`floor(elapsed / incrementDuration) × increment`) rather than exact elapsed; remaining fractional tokens are left on the account
+- [ ] **STR-09**: When `increment` is set on a streaming TX, auto-termination triggers when the account's remaining balance falls below one full increment's worth of tokens — the stream stops before a partial increment can begin
+
+### Auto-Termination
+
+- [ ] **AUTO-01**: Engine automatically terminates any streaming transaction when the draining account's estimated balance would reach the configured floor (or, if `increment` is set, when remaining balance drops below one increment); auto-termination is treated as an error close (minimum amount waived)
+- [ ] **AUTO-02**: Engine schedules termination checks efficiently: on stream start (or on any balance change affecting an active stream), the estimated exhaustion time is calculated and a precise wake-up is scheduled rather than constant polling; the scheduler uses a priority queue keyed by exhaustion time
+- [ ] **AUTO-03**: Auto-termination emits a distinct event identifying the reason (balance exhaustion) so callers can distinguish it from client-initiated stops
 
 ### Tags
 
@@ -50,7 +59,7 @@
 
 ### Rake Engine
 
-- [ ] **RAKE-01**: Caller can configure rake rules per transaction type; rake rate is resolved from caller-supplied metadata at transaction post time
+- [ ] **RAKE-01**: Caller can configure rake rules per transaction type (applies to both discrete and streaming transactions); rake rate is resolved from caller-supplied metadata at transaction post time
 - [ ] **RAKE-02**: Engine executes rake-enabled transactions as an atomic three-way operation: debit from-account → credit to-account → credit platform-account, with no intermediate inconsistent state
 - [ ] **RAKE-03**: Engine supports zero-rake (spread-only), full-rake, and hybrid configurations
 - [ ] **RAKE-04**: Rake arithmetic is balanced: debit to from-account equals sum of credits (enforced by DB check constraint)
@@ -134,6 +143,12 @@
 | STR-04 | Phase 3 | Pending |
 | STR-05 | Phase 3 | Pending |
 | STR-06 | Phase 3 | Pending |
+| STR-07 | Phase 3 | Pending |
+| STR-08 | Phase 3 | Pending |
+| STR-09 | Phase 3 | Pending |
+| AUTO-01 | Phase 3 | Pending |
+| AUTO-02 | Phase 3 | Pending |
+| AUTO-03 | Phase 3 | Pending |
 | BAL-02 | Phase 3 | Pending |
 | TAG-01 | Phase 4 | Pending |
 | TAG-02 | Phase 4 | Pending |
@@ -159,10 +174,10 @@
 | PKG-03 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 41 total
-- Mapped to phases: 41
+- v1 requirements: 48 total
+- Mapped to phases: 48
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 — sessions replaced by tag-based grouping; pause/resume and streaming accumulation removed*
+*Last updated: 2026-05-13 — added minimum amount, increment billing, auto-termination scheduler, rake on discrete transactions*
