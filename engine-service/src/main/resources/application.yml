@@ -1,0 +1,25 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: token-engine
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    deserialization:
+      use-big-decimal-for-floats: true
+
+token-engine:
+  balance-floor: 0

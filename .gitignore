@@ -12,6 +12,7 @@
 
 # Package Files #
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear
@@ -24,3 +25,14 @@ hs_err_pid*
 replay_pid*
 
 /.claude/hooks/node_modules/
+
+# Gradle build output
+.gradle/
+build/
+*/build/
+
+# IDEA project files
+.idea/
+*.iml
+*.ipr
+*.iws

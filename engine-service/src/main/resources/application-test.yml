@@ -1,0 +1,4 @@
+# Test datasource injected by @ServiceConnection — no overrides needed here
+spring:
+  flyway:
+    locations: classpath:db/migration

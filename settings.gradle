@@ -1,0 +1,4 @@
+rootProject.name = 'token-engine'
+include 'engine-core'
+include 'engine-spring'
+include 'engine-service'
