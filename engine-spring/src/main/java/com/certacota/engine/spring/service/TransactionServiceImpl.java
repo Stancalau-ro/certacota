@@ -43,19 +43,20 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public PostTransactionResponse credit(PostTransactionRequest request) {
         log.info("Processing CREDIT transaction for account: {}", request.accountId());
-
-        return idempotencyKeyRepository
-            .findByIdempotencyKeyAndOperation(request.idempotencyKey(), "DISCRETE_CREDIT")
-            .map(ik -> {
-                log.info("Returning cached idempotent response for key: {}", request.idempotencyKey());
-                return deserialize(ik.getResponseBody(), PostTransactionResponse.class);
-            })
-            .orElseGet(() -> doCredit(request));
+        return doCredit(request);
     }
 
     private PostTransactionResponse doCredit(PostTransactionRequest request) {
         Account account = accountRepository.findWithLock(request.accountId())
             .orElseThrow(() -> new AccountNotFoundException(request.accountId()));
+
+        // Idempotency check after lock acquisition to prevent duplicate execution under race conditions
+        var existing = idempotencyKeyRepository
+            .findByIdempotencyKeyAndOperation(request.idempotencyKey(), "DISCRETE_CREDIT");
+        if (existing.isPresent()) {
+            log.info("Returning cached idempotent response for key: {}", request.idempotencyKey());
+            return deserialize(existing.get().getResponseBody(), PostTransactionResponse.class);
+        }
 
         if (account.getStatus() == AccountStatus.CLOSED) {
             log.warn("Attempt to credit closed account: {}", request.accountId());
@@ -94,19 +95,20 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public PostTransactionResponse debit(PostTransactionRequest request) {
         log.info("Processing DEBIT transaction for account: {}", request.accountId());
-
-        return idempotencyKeyRepository
-            .findByIdempotencyKeyAndOperation(request.idempotencyKey(), "DISCRETE_DEBIT")
-            .map(ik -> {
-                log.info("Returning cached idempotent response for key: {}", request.idempotencyKey());
-                return deserialize(ik.getResponseBody(), PostTransactionResponse.class);
-            })
-            .orElseGet(() -> doDebit(request));
+        return doDebit(request);
     }
 
     private PostTransactionResponse doDebit(PostTransactionRequest request) {
         Account account = accountRepository.findWithLock(request.accountId())
             .orElseThrow(() -> new AccountNotFoundException(request.accountId()));
+
+        // Idempotency check after lock acquisition to prevent duplicate execution under race conditions
+        var existing = idempotencyKeyRepository
+            .findByIdempotencyKeyAndOperation(request.idempotencyKey(), "DISCRETE_DEBIT");
+        if (existing.isPresent()) {
+            log.info("Returning cached idempotent response for key: {}", request.idempotencyKey());
+            return deserialize(existing.get().getResponseBody(), PostTransactionResponse.class);
+        }
 
         if (account.getStatus() == AccountStatus.CLOSED) {
             log.warn("Attempt to debit closed account: {}", request.accountId());
