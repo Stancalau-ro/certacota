@@ -14,7 +14,13 @@ Correct, real-time token accounting across concurrent mixed transaction types in
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Discrete credit/debit transactions with caller-supplied metadata — validated in Phase 1 + Phase 2 (DTX-01, DTX-02, META-01, META-02)
+- [x] Balance floor enforcement, including under concurrent load — validated in Phase 2 (DTX-02, DTX-03, DTX-04)
+- [x] Idempotent write semantics via idempotency key — validated in Phase 1 + Phase 2
+- [x] Rake-enabled atomic three-way split on discrete transactions — validated in Phase 2 (RAKE-01)
+- [x] Immutable append-only audit log with full transaction linkage — validated in Phase 1 + Phase 2
+- [x] Participant account lifecycle (create, balance, close) — validated in Phase 1
+- [x] Spring Boot autoconfigure packaging with @ConditionalOnMissingBean — validated in Phase 1 + Phase 2
 
 ### Active
 
@@ -81,4 +87,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-13 after initialization*
+*Last updated: 2026-05-13 after Phase 2 completion*
