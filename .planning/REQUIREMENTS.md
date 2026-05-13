@@ -15,7 +15,7 @@
 
 - [ ] **FUND-01**: Engine enforces idempotency on all write operations via caller-supplied idempotency key (enforced by DB UNIQUE constraint — not application-layer check)
 - [ ] **FUND-02**: Engine records an immutable append-only audit log entry for every balance change
-- [ ] **FUND-03**: Engine exposes health endpoint (Spring Actuator) and metrics (Micrometer / Prometheus)
+- [x] **FUND-03**: Engine exposes health endpoint (Spring Actuator) and metrics (Micrometer / Prometheus)
 
 ### Balance
 
@@ -130,7 +130,7 @@
 | ACCT-03 | Phase 1 | Pending |
 | FUND-01 | Phase 1 | Pending |
 | FUND-02 | Phase 1 | Pending |
-| FUND-03 | Phase 1 | Pending |
+| FUND-03 | Phase 1 | Complete (01-01) |
 | BAL-01 | Phase 1 | Pending |
 | BAL-03 | Phase 1 | Pending |
 | DTX-01 | Phase 2 | Pending |

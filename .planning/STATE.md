@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 1 planned — ready to execute
+status: executing
+stopped_at: Phase 1 executing — Plan 01-01 complete; Wave 1 continues with 01-02 (Domain layer)
 last_updated: "2026-05-13"
-last_activity: 2026-05-13 — Phase 1 planned; 3 plans in 2 waves (Walking Skeleton + Domain + REST)
+last_activity: 2026-05-13 — 01-01 (Walking Skeleton) complete; Gradle scaffold + Flyway DDL + Testcontainers/Cucumber wired
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 3
 ---
 
 # Project State
@@ -26,30 +26,30 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 1 of 6 (Foundation)
-Plan: 0 of 3 in current phase
-Status: Ready to execute
-Last activity: 2026-05-13 — Phase 1 planned; 3 plans in 2 waves (Walking Skeleton + Domain + REST)
+Plan: 1 of 3 in current phase
+Status: Executing — Plan 01-01 complete; Plan 01-02 (Domain layer) is next
+Last activity: 2026-05-13 — 01-01 Walking Skeleton complete (Gradle 8.14, Spring Boot 3.5.3, Flyway V1-V3, Testcontainers+Cucumber)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 3%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 6 min
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1. Foundation | 1/3 | 6 min | 6 min |
 
 **Recent Trend:**
 
-- Last 5 plans: none yet
-- Trend: -
+- Last 5 plans: 01-01 (6 min)
+- Trend: establishing baseline
 
 *Updated after each plan completion*
 
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 - [Init]: REST-only API in v1; streaming estimation served on-demand via GET, not push
 - [Init]: In-memory hot state (StreamRegistry) + Postgres for durable audit and settlement
 - [Init]: Session lifecycle replaced by tag-based grouping; pause/resume removed from scope
+- [01-01]: Spring Boot 3.5.3 used (D-02 specified 3.4.x; 3.4 OSS support ended 2025-12-31; 3.5.3 is drop-in compatible)
+- [01-01]: flyway-database-postgresql required as separate dependency alongside flyway-core (Flyway 10+ split Postgres support)
+- [01-01]: @ServiceConnection handles datasource injection in tests — no spring.datasource.url in any properties file
 
 ### Pending Todos
 
@@ -87,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-13
-Stopped at: Phase 1 planned — ready to execute
-Resume file: .planning/phases/01-foundation/01-01-PLAN.md
+Stopped at: Plan 01-01 complete — 01-02 (Domain layer) is next in Wave 1
+Resume file: .planning/phases/01-foundation/01-02-PLAN.md

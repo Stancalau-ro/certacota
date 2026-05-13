@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. The Spring Actuator health endpoint returns UP and the Micrometer/Prometheus metrics endpoint is reachable; a Testcontainers integration test confirms both against a live Postgres instance
 **Plans**: 3 plans
 Plans:
-- [ ] 01-01-PLAN.md — Walking Skeleton: Gradle multi-module scaffold, Flyway DDL migrations, Testcontainers + Cucumber test infrastructure
+- [x] 01-01-PLAN.md — Walking Skeleton: Gradle multi-module scaffold, Flyway DDL migrations, Testcontainers + Cucumber test infrastructure
 - [ ] 01-02-PLAN.md — Domain layer: engine-core entities/repositories/service interface, engine-spring AccountServiceImpl + autoconfigure wiring
 - [ ] 01-03-PLAN.md — REST layer + acceptance tests: AccountController, GlobalExceptionHandler, all 5 Cucumber feature files green
 
@@ -110,7 +110,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Planning done | - |
+| 1. Foundation | 1/3 | In progress | - |
 | 2. Discrete Transactions | 0/TBD | Not started | - |
 | 3. Streaming Transactions | 0/TBD | Not started | - |
 | 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
