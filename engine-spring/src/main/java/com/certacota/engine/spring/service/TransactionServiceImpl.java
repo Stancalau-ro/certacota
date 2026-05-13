@@ -163,6 +163,18 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private PostTransactionResponse doDebitWithRake(PostTransactionRequest request, Account fromAccount, BigDecimal rakeRate) {
+        BigDecimal effectiveFloor = fromAccount.getBalanceFloor() != null
+            ? fromAccount.getBalanceFloor()
+            : properties.getBalanceFloor();
+        BigDecimal resultingBalance = fromAccount.getBalance().subtract(request.amount());
+        if (resultingBalance.compareTo(effectiveFloor) < 0) {
+            log.warn("Balance floor violation in rake path: debit of {} would bring balance to {}, below floor {}",
+                request.amount(), resultingBalance, effectiveFloor);
+            throw new BalanceFloorViolationException(
+                "Debit of " + request.amount() + " would bring balance to " + resultingBalance
+                    + ", below floor " + effectiveFloor);
+        }
+
         BigDecimal rakeAmount = request.amount().multiply(rakeRate).setScale(18, RoundingMode.DOWN);
         BigDecimal toAccountAmount = request.amount().subtract(rakeAmount);
 
