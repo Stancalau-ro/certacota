@@ -1,1 +1,1 @@
-io.certacota.engine.spring.autoconfigure.TokenEngineAutoConfiguration
+com.certacota.engine.spring.autoconfigure.TokenEngineAutoConfiguration
