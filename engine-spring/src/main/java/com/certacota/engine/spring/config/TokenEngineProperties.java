@@ -2,6 +2,7 @@ package com.certacota.engine.spring.config;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ public class TokenEngineProperties {
 
     @Getter
     @Setter
+    @Slf4j
     public static class RakeProperties {
 
         private boolean enabled = false;
@@ -38,7 +40,12 @@ public class TokenEngineProperties {
             if (rateStr == null) {
                 return BigDecimal.ZERO;
             }
-            return new BigDecimal(rateStr);
+            try {
+                return new BigDecimal(rateStr);
+            } catch (NumberFormatException e) {
+                log.warn("Misconfigured rake rate '{}' for key '{}'; treating as zero", rateStr, keyValue);
+                return BigDecimal.ZERO;
+            }
         }
     }
 }
