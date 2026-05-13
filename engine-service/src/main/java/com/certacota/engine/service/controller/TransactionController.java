@@ -26,10 +26,9 @@ public class TransactionController {
     @ResponseStatus(HttpStatus.CREATED)
     public PostTransactionResponse postTransaction(@Valid @RequestBody PostTransactionRequest request) {
         log.info("Posting {} transaction for account: {}", request.type(), request.accountId());
-        if (request.type() == TransactionType.CREDIT) {
-            return transactionService.credit(request);
-        } else {
-            return transactionService.debit(request);
-        }
+        return switch (request.type()) {
+            case CREDIT -> transactionService.credit(request);
+            case DEBIT  -> transactionService.debit(request);
+        };
     }
 }
