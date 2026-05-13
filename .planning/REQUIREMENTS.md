@@ -7,21 +7,21 @@
 
 ### Accounts
 
-- [ ] **ACCT-01**: Caller can create a participant account with an initial token balance
-- [ ] **ACCT-02**: Caller can close a participant account (rejected if active streaming transactions exist)
-- [ ] **ACCT-03**: Caller can retrieve a participant account and its current committed balance
+- [x] **ACCT-01**: Caller can create a participant account with an initial token balance
+- [x] **ACCT-02**: Caller can close a participant account (rejected if active streaming transactions exist)
+- [x] **ACCT-03**: Caller can retrieve a participant account and its current committed balance
 
 ### Foundation
 
-- [ ] **FUND-01**: Engine enforces idempotency on all write operations via caller-supplied idempotency key (enforced by DB UNIQUE constraint — not application-layer check)
-- [ ] **FUND-02**: Engine records an immutable append-only audit log entry for every balance change
+- [x] **FUND-01**: Engine enforces idempotency on all write operations via caller-supplied idempotency key (enforced by DB UNIQUE constraint — not application-layer check)
+- [x] **FUND-02**: Engine records an immutable append-only audit log entry for every balance change
 - [x] **FUND-03**: Engine exposes health endpoint (Spring Actuator) and metrics (Micrometer / Prometheus)
 
 ### Balance
 
-- [ ] **BAL-01**: Caller can query a participant's current committed balance
+- [x] **BAL-01**: Caller can query a participant's current committed balance
 - [ ] **BAL-02**: Caller can query a participant's forward-estimated balance given all currently in-flight streaming transactions, with an `estimated_at` timestamp
-- [ ] **BAL-03**: Engine enforces a minimum balance floor (default 0); rejects any operation that would take a balance below the floor
+- [x] **BAL-03**: Engine enforces a minimum balance floor (default 0); rejects any operation that would take a balance below the floor
 
 ### Discrete Transactions
 
@@ -125,14 +125,14 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ACCT-01 | Phase 1 | Pending |
-| ACCT-02 | Phase 1 | Pending |
-| ACCT-03 | Phase 1 | Pending |
-| FUND-01 | Phase 1 | Pending |
-| FUND-02 | Phase 1 | Pending |
+| ACCT-01 | Phase 1 | Complete |
+| ACCT-02 | Phase 1 | Complete |
+| ACCT-03 | Phase 1 | Complete |
+| FUND-01 | Phase 1 | Complete |
+| FUND-02 | Phase 1 | Complete |
 | FUND-03 | Phase 1 | Complete (01-01) |
-| BAL-01 | Phase 1 | Pending |
-| BAL-03 | Phase 1 | Pending |
+| BAL-01 | Phase 1 | Complete |
+| BAL-03 | Phase 1 | Complete |
 | DTX-01 | Phase 2 | Pending |
 | DTX-02 | Phase 2 | Pending |
 | DTX-03 | Phase 2 | Pending |

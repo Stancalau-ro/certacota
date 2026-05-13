@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 executing — Plan 01-02 complete; Wave 1 continues with 01-03 (REST layer + Cucumber acceptance tests)
-last_updated: "2026-05-13"
-last_activity: 2026-05-13 — 01-02 (Domain layer) complete; engine-core + engine-spring domain model, AccountServiceImpl, autoconfigure wired
+stopped_at: "Completed 01-03: Phase 1 Foundation complete — all 3 plans done, 8 requirements verified green"
+last_updated: "2026-05-13T11:45:10.083Z"
+last_activity: 2026-05-13
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 7
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 1 of 6 (Foundation)
-Plan: 2 of 3 in current phase
-Status: Executing — Plan 01-02 complete; Plan 01-03 (REST layer + Cucumber acceptance tests) is next
-Last activity: 2026-05-13 — 01-02 Domain layer complete (Account entity, repositories, AccountService interface, DTOs, exceptions, AccountServiceImpl, TokenEngineAutoConfiguration)
+Plan: 3 of 3 in current phase
+Status: Ready to execute
+Last activity: 2026-05-13
 
-Progress: [█░░░░░░░░░] 7%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [█░░░░░░░░░] 7%
 - Trend: domain layer slightly longer due to dependency resolution deviations
 
 *Updated after each plan completion*
+| Phase 01-foundation P03 | 90 | 2 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,10 @@ Recent decisions affecting current work:
 - [01-02]: Java records used for DTOs (CreateAccountRequest, AccountResponse) — immutable, no Lombok needed
 - [01-02]: hibernate-core compileOnly added to engine-core for @JdbcTypeCode/@SqlTypes annotation resolution
 - [01-02]: jackson-databind added to engine-spring for ObjectMapper injection in AccountServiceImpl
+- [Phase ?]: Check-then-insert idempotency: findByIdempotencyKeyAndOperation before doCreateAccount avoids DataIntegrityViolationException poisoning the outer transaction
+- [Phase ?]: [01-03]: Jackson UTC normalization required for deterministic idempotency JSON body comparison
+- [Phase ?]: [01-03]: DOCKER_HOST=tcp://localhost:2375 + api.version=1.44 required for Docker Desktop 4.60+ Testcontainers compatibility
+- [Phase ?]: [01-03]: @EntityScan + @EnableJpaRepositories required on EngineServiceApplication to discover engine-core JPA classes
 
 ### Pending Todos
 
@@ -92,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-13
-Stopped at: Plan 01-02 complete — 01-03 (REST layer + Cucumber acceptance tests) is next in Wave 1
-Resume file: .planning/phases/01-foundation/01-03-PLAN.md
+Last session: 2026-05-13T11:45:10.072Z
+Stopped at: Completed 01-03: Phase 1 Foundation complete — all 3 plans done, 8 requirements verified green
+Resume file: None

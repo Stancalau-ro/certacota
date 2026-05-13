@@ -12,7 +12,7 @@ Six phases deliver a correct, real-time token accounting engine that handles con
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Accounts, balance floor, idempotency, audit log, and observability scaffold
+- [x] **Phase 1: Foundation** - Accounts, balance floor, idempotency, audit log, and observability scaffold (completed 2026-05-13)
 - [ ] **Phase 2: Discrete Transactions** - Credits, debits, floor enforcement, concurrency correctness, open metadata, and rake on discrete transactions
 - [ ] **Phase 3: Streaming Transactions** - Rate-based drain, mathematical projection settlement, in-memory StreamRegistry, forward balance estimation, minimum amount, increment billing, and auto-termination
 - [ ] **Phase 4: Tags, Rake on Streaming, and Threshold Events** - Tag grouping, atomic multi-stream settlement, three-way rake splits on streaming transactions, and threshold crossing detection
@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Walking Skeleton: Gradle multi-module scaffold, Flyway DDL migrations, Testcontainers + Cucumber test infrastructure
 - [x] 01-02-PLAN.md — Domain layer: engine-core entities/repositories/service interface, engine-spring AccountServiceImpl + autoconfigure wiring
-- [ ] 01-03-PLAN.md — REST layer + acceptance tests: AccountController, GlobalExceptionHandler, all 5 Cucumber feature files green
+- [x] 01-03-PLAN.md — REST layer + acceptance tests: AccountController, GlobalExceptionHandler, all 5 Cucumber feature files green
 
 ### Phase 2: Discrete Transactions
 **Goal**: Callers can post credits and debits with metadata and optional rake; the engine rejects floor violations even under concurrent load, produces no double-spends or lost updates, and executes rake-enabled discrete transactions as atomic three-way splits
@@ -110,7 +110,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 2/3 | In progress | - |
+| 1. Foundation | 3/3 | Complete   | 2026-05-13 |
 | 2. Discrete Transactions | 0/TBD | Not started | - |
 | 3. Streaming Transactions | 0/TBD | Not started | - |
 | 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
