@@ -58,7 +58,7 @@ Plans:
 - [x] 02-02-PLAN.md — Service layer: TransactionServiceImpl (credit, debit, rake), TokenEngineProperties RakeProperties, TransactionController, autoconfigure wiring
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02-03-PLAN.md — Acceptance tests: four Cucumber feature files (credit, debit, metadata, rake) + concurrent debit stress test (DTX-04)
+- [x] 02-03-PLAN.md — Acceptance tests: four Cucumber feature files (credit, debit, metadata, rake) + concurrent debit stress test (DTX-04)
 
 Cross-cutting constraints:
 - `PESSIMISTIC_WRITE` (`SELECT FOR UPDATE`) on account row must be acquired BEFORE the balance floor check in every debit path
