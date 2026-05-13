@@ -32,7 +32,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Every balance change produces an immutable append-only audit log entry visible in Postgres immediately after the operation completes
   4. Any operation that would take a balance below the configured floor (default 0) is rejected before the write occurs
   5. The Spring Actuator health endpoint returns UP and the Micrometer/Prometheus metrics endpoint is reachable; a Testcontainers integration test confirms both against a live Postgres instance
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Walking Skeleton: Gradle multi-module scaffold, Flyway DDL migrations, Testcontainers + Cucumber test infrastructure
+- [ ] 01-02-PLAN.md — Domain layer: engine-core entities/repositories/service interface, engine-spring AccountServiceImpl + autoconfigure wiring
+- [ ] 01-03-PLAN.md — REST layer + acceptance tests: AccountController, GlobalExceptionHandler, all 5 Cucumber feature files green
 
 ### Phase 2: Discrete Transactions
 **Goal**: Callers can post credits and debits with metadata and optional rake; the engine rejects floor violations even under concurrent load, produces no double-spends or lost updates, and executes rake-enabled discrete transactions as atomic three-way splits
@@ -72,7 +76,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. A streaming transaction created with tags can be stopped individually or as part of a bulk end-by-tag operation; all matched streams settle in a single DB transaction; the `tag_committed_totals` row is updated inside the same DB transaction as each settlement
   2. A tag aggregate query returns committed total (Postgres-backed) plus in-flight projection (sum of rate × elapsed for all active streams carrying that tag) without a full table scan; a discrete transaction carrying a tag contributes its posted amount to the tag committed total
   3. A rake-enabled streaming transaction executes as an atomic three-way debit/credit/credit on settlement; the debit to the from-account equals the sum of credits (enforced by DB check constraint); zero-rake, full-rake, and hybrid configurations all produce balanced arithmetic
-  4. A threshold registered on an account or tag fires exactly once when the crossing is detected, even under concurrent discrete transactions or simultaneous stream settlements; the emitted threshold event carries the account or tag identifier, the threshold value, and the open metadata of the triggering transaction
+  4. A threshold registered on an account or tag fires exactly once when the crossing is detected, even under concurrent discrete transactions or simultaneous stream settlements against the same account or tag; the emitted threshold event carries the account or tag identifier, the threshold value, and the open metadata of the triggering transaction
   5. Tag cache entries are evicted by TTL after the configured inactivity period; a background job cleans up `tag_committed_totals` rows keyed on `last_activity_at`
 **Plans**: TBD
 **UI hint**: no
@@ -106,7 +110,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/3 | Planning done | - |
 | 2. Discrete Transactions | 0/TBD | Not started | - |
 | 3. Streaming Transactions | 0/TBD | Not started | - |
 | 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
