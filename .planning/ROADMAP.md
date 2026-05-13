@@ -99,7 +99,7 @@ Plans:
 **Requirements**: PKG-01, PKG-02, PKG-03
 **Success Criteria** (what must be TRUE):
   1. `engine-core` compiles and its tests pass with zero Spring or web framework dependencies on the classpath; all domain logic lives here
-  2. `engine-spring` registers all beans via `AutoConfiguration.imports`, uses `@ConditionalOnMissingBean` on every bean, and namespaces all configuration properties under `token-engine.*`
+  2. `engine-spring` registers all beans via `AutoConfiguration.imports`, uses `@ConditionalOnMissingBean` on every bean (including repository adapters — see PKG-EXT-01 in STATE.md deferred items), and namespaces all configuration properties under `token-engine.*`
   3. A Testcontainers integration test embeds `engine-spring` as a starter inside a synthetic host Spring Boot application; the combined context starts without bean name collisions, property namespace conflicts, or duplicate auto-configuration; all engine endpoints respond correctly inside the host
 **Plans**: TBD
 

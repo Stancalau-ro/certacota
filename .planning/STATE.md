@@ -94,6 +94,7 @@ None yet.
 | Tags | TAG-HIST-01: Historical aggregate query | v2 | Init |
 | Observability | OBS-01: OpenTelemetry trace context | v2 | Init |
 | Clients | CLT-01: Typed Java client library | v2 | Init |
+| Architecture | PKG-EXT-01: Repository port interfaces for enterprise swapping — engine-core repos currently extend JpaRepository directly; for clean enterprise-tier override (JDBC, custom ORM) they should be plain port interfaces with JPA adapters in engine-spring guarded by @ConditionalOnMissingBean | Phase 6 | Phase 1 |
 
 ## Session Continuity
 
