@@ -2,6 +2,8 @@ package com.certacota.engine.core.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -10,17 +12,20 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 @Entity
-@Table(name = "balance_audit_log")
+@Table(name = "discrete_transactions")
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BalanceAuditLog {
+public class DiscreteTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,24 +34,20 @@ public class BalanceAuditLog {
     @Column(name = "account_id", nullable = false, updatable = false)
     private String accountId;
 
-    @Column(name = "operation", nullable = false, updatable = false, length = 50)
-    private String operation;
+    @Column(name = "type", nullable = false, updatable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
 
     @Column(name = "amount", nullable = false, updatable = false, precision = 38, scale = 18)
     private BigDecimal amount;
 
-    @Column(name = "balance_before", nullable = false, updatable = false, precision = 38, scale = 18)
-    private BigDecimal balanceBefore;
-
-    @Column(name = "balance_after", nullable = false, updatable = false, precision = 38, scale = 18)
-    private BigDecimal balanceAfter;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "metadata", columnDefinition = "jsonb")
+    private Map<String, Object> metadata;
 
     @Column(name = "idempotency_key", updatable = false)
     private String idempotencyKey;
 
-    @Column(name = "transaction_id", updatable = false)
-    private Long transactionId;
-
-    @Column(name = "recorded_at", updatable = false)
-    private OffsetDateTime recordedAt;
+    @Column(name = "posted_at", updatable = false)
+    private OffsetDateTime postedAt;
 }
