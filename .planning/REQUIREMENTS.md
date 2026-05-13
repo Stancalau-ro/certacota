@@ -38,7 +38,7 @@
 - [ ] **STR-04**: Engine processes concurrent streaming and discrete transactions against the same balance with full correctness
 - [ ] **STR-05**: Engine settles streaming drain atomically to Postgres on stream stop; in-memory and durable state are never permanently divergent
 - [ ] **STR-06**: Engine uses BigDecimal (not floating-point) for all token rate arithmetic
-- [ ] **STR-07**: Streaming TX accepts an optional `minimumAmount` parameter; if the stream is stopped by a client-initiated close before `minimumAmount` has been drained, the engine charges `minimumAmount` instead of actual elapsed amount; error-terminated streams always charge actual elapsed amount (minimum is waived)
+- [ ] **STR-07**: Streaming TX accepts an optional `minimumAmount` parameter; if the stream is stopped by a client-initiated close before `minimumAmount` has been drained, the engine charges `minimumAmount` instead of actual elapsed amount; the stop API accepts an optional `ignoreMinimum` flag (default false) that allows the caller to explicitly waive the minimum on a client-initiated close; error-terminated and auto-terminated streams always charge actual elapsed amount (minimum is always waived)
 - [ ] **STR-08**: Streaming TX accepts an optional `increment` parameter (token amount per billing unit); when set, settlement rounds down to the nearest complete increment (`floor(elapsed / incrementDuration) × increment`) rather than exact elapsed; remaining fractional tokens are left on the account
 - [ ] **STR-09**: When `increment` is set on a streaming TX, auto-termination triggers when the account's remaining balance falls below one full increment's worth of tokens — the stream stops before a partial increment can begin
 
@@ -137,6 +137,9 @@
 | DTX-02 | Phase 2 | Pending |
 | DTX-03 | Phase 2 | Pending |
 | DTX-04 | Phase 2 | Pending |
+| META-01 | Phase 2 | Pending |
+| META-02 | Phase 2 | Pending |
+| RAKE-01 | Phase 2 | Pending |
 | STR-01 | Phase 3 | Pending |
 | STR-02 | Phase 3 | Pending |
 | STR-03 | Phase 3 | Pending |
@@ -156,7 +159,6 @@
 | TAG-04 | Phase 4 | Pending |
 | TAG-05 | Phase 4 | Pending |
 | TAG-06 | Phase 4 | Pending |
-| RAKE-01 | Phase 4 | Pending |
 | RAKE-02 | Phase 4 | Pending |
 | RAKE-03 | Phase 4 | Pending |
 | RAKE-04 | Phase 4 | Pending |
@@ -164,8 +166,6 @@
 | EVT-02 | Phase 4 | Pending |
 | EVT-03 | Phase 4 | Pending |
 | EVT-04 | Phase 4 | Pending |
-| META-01 | Phase 2 | Pending |
-| META-02 | Phase 2 | Pending |
 | EMIT-01 | Phase 5 | Pending |
 | EMIT-02 | Phase 5 | Pending |
 | EMIT-03 | Phase 5 | Pending |
@@ -180,4 +180,4 @@
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 — added minimum amount, increment billing, auto-termination scheduler, rake on discrete transactions*
+*Last updated: 2026-05-13 — RAKE-01 remapped from Phase 4 to Phase 2 (rake on discrete belongs with discrete transaction build)*
