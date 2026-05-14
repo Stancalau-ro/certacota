@@ -1,6 +1,5 @@
 Feature: End-by-tag bulk stream settlement
 
-  @Pending
   Scenario: End-by-tag settles all active streams matching the tag in one transaction
     Given no account with id "ebt-001" exists
     And no account with id "ebt-002" exists
@@ -15,14 +14,12 @@ Feature: End-by-tag bulk stream settlement
     Then the response status is 200
     And the end-by-tag response settled count is 3
 
-  @Pending
   Scenario: End-by-tag with no active streams for tag returns HTTP 200 with settled count zero
     Given no account with id "ebt-empty-001" exists
     When I end streams by tag "tag-with-no-streams" with idempotency key "ik-ebt-empty-001"
     Then the response status is 200
     And the end-by-tag response settled count is 0
 
-  @Pending
   Scenario: End-by-tag skips already settled streams and reports them in skipped count
     Given no account with id "ebt-skip-001" exists
     And an account "ebt-skip-001" exists with balance 500.00
@@ -32,7 +29,6 @@ Feature: End-by-tag bulk stream settlement
     Then the response status is 200
     And the end-by-tag response settled count is 0
 
-  @Pending
   Scenario: End-by-tag with same idempotency key returns identical cached response
     Given no account with id "ebt-idem-001" exists
     And an account "ebt-idem-001" exists with balance 500.00
