@@ -82,16 +82,16 @@ Cross-cutting constraints:
 **Plans**: 4 plans
 Plans:
 **Wave 1**
-- [ ] 03-01-PLAN.md — Infrastructure + engine-core contracts + test scaffolding: Flyway V7/V8/V9 DDL migrations, Redis/Redisson/ShedLock dependencies, StreamingTransaction entity, StreamState record, StreamRegistry interface, StreamingService interface, all DTOs and exceptions, TestcontainersConfiguration Redis, 6 Cucumber feature files, StreamingSteps pending stubs
+- [x] 03-01-PLAN.md — Infrastructure + engine-core contracts + test scaffolding: Flyway V7/V8/V9 DDL migrations, Redis/Redisson/ShedLock dependencies, StreamingTransaction entity, StreamState record, StreamRegistry interface, StreamingService interface, all DTOs and exceptions, TestcontainersConfiguration Redis, 6 Cucumber feature files, StreamingSteps pending stubs
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 03-02-PLAN.md — Core streaming slice: RedisStreamRegistry, StreamingServiceImpl (start/stop/estimateBalance/startup reconciliation), TokenEngineProperties extensions, StreamingAutoConfiguration, StreamController, EstimationController, GlobalExceptionHandler additions
+- [x] 03-02-PLAN.md — Core streaming slice: RedisStreamRegistry, StreamingServiceImpl (start/stop/estimateBalance/startup reconciliation), TokenEngineProperties extensions, StreamingAutoConfiguration, StreamController, EstimationController, GlobalExceptionHandler additions
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 03-03-PLAN.md — Auto-termination scheduler (Redisson primary + ShedLock-guarded Postgres fallback), OPS-02 archival job + idempotency TTL sweep, TransactionServiceImpl estimated-floor modification, AccountServiceImpl active-stream close check
+- [x] 03-03-PLAN.md — Auto-termination scheduler (Redisson primary + ShedLock-guarded Postgres fallback), OPS-02 archival job + idempotency TTL sweep, TransactionServiceImpl estimated-floor modification, AccountServiceImpl active-stream close check
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 03-04-PLAN.md — All acceptance tests: StreamingSteps step implementations (6 feature files), StreamingConcurrencyTest (STR-04), ArithmeticTest (STR-06)
+- [x] 03-04-PLAN.md — All acceptance tests: StreamingSteps step implementations (6 feature files), StreamingConcurrencyTest (STR-04), ArithmeticTest (STR-06)
 
 Cross-cutting constraints:
 - `PESSIMISTIC_WRITE` (`SELECT FOR UPDATE`) on account row must be acquired BEFORE StreamRegistry read BEFORE balance check in every streaming write path
@@ -144,7 +144,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
-| 3. Streaming Transactions | 0/4 | Not started | - |
+| 3. Streaming Transactions | 4/4 | Verifying | - |
 | 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planned
-stopped_at: "Phase 3 Streaming Transactions planned — 4 plans ready to execute"
+status: in_progress
+stopped_at: "Phase 3 Streaming Transactions complete — 4/4 plans done, verification pending"
 last_updated: "2026-05-14T00:00:00.000Z"
 last_activity: 2026-05-14
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 10
-  completed_plans: 3
+  total_plans: 14
+  completed_plans: 7
   percent: 50
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** Correct, real-time token accounting across concurrent mixed transaction types in multi-party sessions
-**Current focus:** Phase 3 — Streaming Transactions
+**Current focus:** Phase 3 — Streaming Transactions (verifying)
 
 ## Current Position
 
 Phase: 3 of 6 (Streaming Transactions)
-Plan: 0 of 4 in current phase
-Status: Ready to execute
+Plan: 4 of 4 in current phase
+Status: All plans executed — verifying
 Last activity: 2026-05-14
 
 Progress: [██████████] 100%
@@ -75,6 +75,10 @@ Recent decisions affecting current work:
 - [Phase ?]: [01-03]: Jackson UTC normalization required for deterministic idempotency JSON body comparison
 - [Phase ?]: [01-03]: DOCKER_HOST=tcp://localhost:2375 + api.version=1.44 required for Docker Desktop 4.60+ Testcontainers compatibility
 - [Phase ?]: [01-03]: @EntityScan + @EnableJpaRepositories required on EngineServiceApplication to discover engine-core JPA classes
+- [03-02]: StringRedisTemplate used instead of RedisTemplate<String,String> to avoid Spring Boot bean ambiguity with autoconfigured RedisTemplate<Object,Object>
+- [03-02]: transactionId omitted from streaming audit log entries — fk_audit_dtx FK only covers discrete_transactions table
+- [03-03]: AutoTerminationScheduler uses @Lazy @Autowired on StreamingService injection to break circular dependency with StreamingServiceImpl
+- [03-03]: OPS-02 resolved — AuditArchivalJob and idempotency TTL sweep implemented with ShedLock guards
 
 ### Pending Todos
 
@@ -82,8 +86,6 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Pre-Phase-3 REQUIRED]: OPS-02 — tables must not grow infinitely. balance_audit_log, idempotency_keys, and closed accounts all need retention/partitioning strategy before Phase 3 streaming generates high-volume audit entries. Must be addressed in Phase 2 or 3 planning.
-- [Phase 3 risk]: Streaming layer is the highest-risk phase — novel engineering: mathematical projection settlement via System.nanoTime(), concurrent StreamRegistry correctness under mixed discrete+streaming load. Plan for a dedicated concurrency stress test.
 - [Phase 6 risk]: Embedding test must verify the starter inside a synthetic host application with no bean collisions — requires careful @ConditionalOnMissingBean coverage in engine-spring.
 
 ## Deferred Items
