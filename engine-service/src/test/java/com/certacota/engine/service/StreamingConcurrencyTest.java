@@ -106,7 +106,7 @@ class StreamingConcurrencyTest {
                     body.put("idempotencyKey", "conc-debit-" + index);
                     ResponseEntity<String> response = restTemplate.exchange(
                         debitUrl, HttpMethod.POST, new HttpEntity<>(body, headers), String.class);
-                    if (response.getStatusCode().value() == 201) {
+                    if (response.getStatusCode().value() == 200) {
                         successCount.incrementAndGet();
                     } else {
                         rejectedCount.incrementAndGet();
@@ -136,7 +136,19 @@ class StreamingConcurrencyTest {
             .orElseThrow(() -> new AssertionError("Account not found after concurrent test"))
             .getBalance();
 
+        // At least some debits must have succeeded — successCount 0 means the status code is wrong
+        assertThat(successCount.get()).isGreaterThan(0);
         assertThat(finalBalance.compareTo(BigDecimal.ZERO)).isGreaterThanOrEqualTo(0);
+
+        // Balance integrity: deducted amount must be exactly successCount * debitAmount plus
+        // stream settlement. Stream ran for a few seconds at 0.001/s — settled amount is negligible
+        // (< 0.1 tokens) so we verify the balance is within a small tolerance of the expected
+        // post-debit balance to detect double-spend regressions.
+        BigDecimal expectedAfterDebits = new BigDecimal("1000.00")
+            .subtract(debitAmount.multiply(BigDecimal.valueOf(successCount.get())));
+        BigDecimal streamSettlementTolerance = new BigDecimal("1.0");
+        assertThat(expectedAfterDebits.subtract(finalBalance).abs()
+            .compareTo(streamSettlementTolerance)).isLessThanOrEqualTo(0);
 
         assertThat(streamingTransactionRepository.findByAccountIdAndStatus(accountId, "ACTIVE")).isEmpty();
     }
