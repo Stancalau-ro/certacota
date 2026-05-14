@@ -22,7 +22,9 @@ import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -290,5 +292,122 @@ public class StreamingSteps {
         JsonNode json = objectMapper.readTree(sharedContext.getLastResponse().getBody());
         JsonNode drainAt = json.get("estimatedDrainAt");
         assertThat(drainAt == null || drainAt.isNull()).isTrue();
+    }
+
+    @When("I start a stream {string} on account {string} at rate {bigdecimal} with tags {string} and idempotency key {string}")
+    public void startStreamWithTags(String streamId, String accountId, BigDecimal rate, String tagsCommaDelimited, String idempotencyKey) {
+        String url = "http://localhost:" + port + "/api/v1/streams";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("streamId", streamId);
+        body.put("accountId", accountId);
+        body.put("ratePerSecond", rate);
+        body.put("idempotencyKey", idempotencyKey);
+        List<String> tags = Arrays.stream(tagsCommaDelimited.split(","))
+            .map(String::trim)
+            .filter(t -> !t.isEmpty())
+            .toList();
+        body.put("tags", tags);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+        sharedContext.setLastResponse(response);
+        log.info("Start stream with tags response: {} {}", response.getStatusCode(), response.getBody());
+    }
+
+    @When("I start a stream {string} on account {string} at rate {bigdecimal} with rake rate {bigdecimal} to account {string} platform account {string} and idempotency key {string}")
+    public void startStreamWithRake(String streamId, String accountId, BigDecimal rate, BigDecimal rakeRate, String toAccountId, String platformAccountId, String idempotencyKey) {
+        String url = "http://localhost:" + port + "/api/v1/streams";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("streamId", streamId);
+        body.put("accountId", accountId);
+        body.put("ratePerSecond", rate);
+        body.put("rakeRate", rakeRate);
+        body.put("toAccountId", toAccountId);
+        body.put("platformAccountId", platformAccountId);
+        body.put("idempotencyKey", idempotencyKey);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+        sharedContext.setLastResponse(response);
+        log.info("Start stream with rake response: {} {}", response.getStatusCode(), response.getBody());
+    }
+
+    @Then("the start response has tags {string}")
+    public void startResponseHasTags(String expectedTagsCsv) throws Exception {
+        JsonNode json = objectMapper.readTree(sharedContext.getLastResponse().getBody());
+        JsonNode tagsNode = json.get("tags");
+        assertThat(tagsNode).isNotNull();
+        List<String> expectedTags = Arrays.stream(expectedTagsCsv.split(","))
+            .map(String::trim)
+            .filter(t -> !t.isEmpty())
+            .sorted()
+            .toList();
+        List<String> actualTags = new java.util.ArrayList<>();
+        tagsNode.forEach(t -> actualTags.add(t.asText()));
+        actualTags.sort(String::compareTo);
+        assertThat(actualTags).isEqualTo(expectedTags);
+    }
+
+    @When("I post a CREDIT of {bigdecimal} to account {string} with tags {string} and idempotency key {string}")
+    public void postCreditWithTags(BigDecimal amount, String accountId, String tagsCommaDelimited, String idempotencyKey) {
+        String url = "http://localhost:" + port + "/api/v1/transactions/credit";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("accountId", accountId);
+        body.put("amount", amount);
+        body.put("idempotencyKey", idempotencyKey);
+        List<String> tags = Arrays.stream(tagsCommaDelimited.split(","))
+            .map(String::trim)
+            .filter(t -> !t.isEmpty())
+            .toList();
+        body.put("tags", tags);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+        sharedContext.setLastResponse(response);
+        log.info("Post credit with tags response: {} {}", response.getStatusCode(), response.getBody());
+    }
+
+    @When("I post a DEBIT of {bigdecimal} from account {string} with tags {string} and idempotency key {string}")
+    public void postDebitWithTags(BigDecimal amount, String accountId, String tagsCommaDelimited, String idempotencyKey) {
+        String url = "http://localhost:" + port + "/api/v1/transactions/debit";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("accountId", accountId);
+        body.put("amount", amount);
+        body.put("idempotencyKey", idempotencyKey);
+        List<String> tags = Arrays.stream(tagsCommaDelimited.split(","))
+            .map(String::trim)
+            .filter(t -> !t.isEmpty())
+            .toList();
+        body.put("tags", tags);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+        sharedContext.setLastResponse(response);
+        log.info("Post debit with tags response: {} {}", response.getStatusCode(), response.getBody());
+    }
+
+    @When("I post a DEBIT of {bigdecimal} from account {string} to account {string} with tags {string} and idempotency key {string}")
+    public void postTransferWithTags(BigDecimal amount, String fromAccountId, String toAccountId, String tagsCommaDelimited, String idempotencyKey) {
+        String url = "http://localhost:" + port + "/api/v1/transactions/transfer";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("fromAccountId", fromAccountId);
+        body.put("toAccountId", toAccountId);
+        body.put("amount", amount);
+        body.put("idempotencyKey", idempotencyKey);
+        List<String> tags = Arrays.stream(tagsCommaDelimited.split(","))
+            .map(String::trim)
+            .filter(t -> !t.isEmpty())
+            .toList();
+        body.put("tags", tags);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+        sharedContext.setLastResponse(response);
+        log.info("Post transfer with tags response: {} {}", response.getStatusCode(), response.getBody());
     }
 }
