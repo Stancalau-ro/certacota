@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 04-01: Phase 4 Wave 0 complete — metadata portability + test scaffolding"
-last_updated: "2026-05-14T16:55:00.000Z"
-last_activity: 2026-05-14 -- Phase 4 plan 01 complete
+stopped_at: "Completed 04-02: Tags vertical slice — TagService, TagController, TagAutoConfiguration, all tag Cucumber scenarios green"
+last_updated: "2026-05-14T17:10:00.000Z"
+last_activity: 2026-05-14 -- Phase 4 plan 02 complete
 progress:
   total_phases: 6
   completed_phases: 3
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 4 of 6 (Tags, Rake on Streaming, and Threshold Events)
-Plan: 1 of 4 in current phase (04-01 complete)
+Plan: 2 of 4 in current phase (04-02 complete)
 Status: Executing
-Last activity: 2026-05-14 -- Phase 4 plan 01 complete
+Last activity: 2026-05-14 -- Phase 4 plan 02 complete
 
 Progress: [██████████] 100%
 
@@ -82,6 +82,10 @@ Recent decisions affecting current work:
 - [04-01]: jackson-databind added as compileOnly to engine-core — keeps engine-core framework-light while enabling MetadataConverter compilation
 - [04-01]: Account.metadata also retrofitted from @JdbcTypeCode to @Convert — all three entity metadata fields now portable
 - [04-01]: Spring Boot 3.5 @TransactionalEventListener requires @Transactional(NOT_SUPPORTED) propagation on methods in @Transactional-annotated classes
+- [04-02]: V12 migration created in plan 04-02 (not 04-03) because StreamingTransaction entity mappings (toAccountId, rakeRate, platformAccountId) were added in Task 1; schema and entity must match on first context load
+- [04-02]: endByTag is stubbed (UnsupportedOperationException) in TagServiceImpl — full implementation deferred to plan 04-04 which owns bulk end-by-tag and TagTtlCleanupJob
+- [04-02]: TagAutoConfiguration conditionally exposes TagService bean with @ConditionalOnMissingBean allowing host app override
+- [04-02]: TransactionController /credit, /debit, /transfer sub-endpoints accept accountId in body (not path) to carry tags alongside amount
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T16:55:00.000Z
-Stopped at: Completed 04-01: Phase 4 Wave 0 complete — metadata portability + test scaffolding
+Last session: 2026-05-14T17:10:00.000Z
+Stopped at: Completed 04-02: Tags vertical slice — TagService aggregate, TagController, TagAutoConfiguration, Cucumber tag scenarios green
 Resume file: None
