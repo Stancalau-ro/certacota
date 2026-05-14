@@ -119,7 +119,7 @@ Plans:
 - [x] 04-02-PLAN.md — Tags vertical slice: V11 schema, TagCommittedTotals entity/repo, tags fields on StartStreamRequest/CreditRequest/DebitRequest/PostTransferRequest, RedisStreamRegistry tag-set extension, StreamingServiceImpl + TransactionServiceImpl tag wiring, TagServiceImpl.aggregate, TagController, TagAutoConfiguration
 
 **Wave 2** *(blocked on Wave 1)*
-- [ ] 04-03-PLAN.md — Streaming rake settlement vertical slice: V12 schema with check constraint, StreamingServiceImpl.stopStream three-way debit/credit/credit, lock ordering from→to→platform→tags(alphabetical)
+- [x] 04-03-PLAN.md — Streaming rake settlement vertical slice: V12 schema with check constraint, StreamingServiceImpl.stopStream three-way debit/credit/credit, lock ordering from→to→platform→tags(alphabetical)
 
 **Wave 3** *(blocked on Wave 2)*
 - [ ] 04-04-PLAN.md — End-by-tag bulk settlement + TagTtlCleanupJob: TagServiceImpl.endByTag full implementation, TokenEngineProperties.TagProperties, ShedLock-guarded scheduled cleanup
@@ -157,6 +157,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
 | 3. Streaming Transactions | 4/4 | Complete   | 2026-05-14 |
-| 4. Tags and Rake on Streaming | 2/4 | In progress | - |
+| 4. Tags and Rake on Streaming | 3/4 | In progress | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |

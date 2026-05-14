@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 04-02: Tags vertical slice — TagService, TagController, TagAutoConfiguration, all tag Cucumber scenarios green"
-last_updated: "2026-05-14T17:10:00.000Z"
-last_activity: 2026-05-14 -- Phase 4 plan 02 complete
+stopped_at: "Completed 04-03: Streaming rake settlement — stopStream three-way split, chk_str_rake_balanced constraint, streaming-rake.feature GREEN"
+last_updated: "2026-05-14T17:20:00.000Z"
+last_activity: 2026-05-14 -- Phase 4 plan 03 complete
 progress:
   total_phases: 6
   completed_phases: 3
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 4 of 6 (Tags, Rake on Streaming, and Threshold Events)
-Plan: 2 of 4 in current phase (04-02 complete)
+Plan: 3 of 4 in current phase (04-03 complete)
 Status: Executing
-Last activity: 2026-05-14 -- Phase 4 plan 02 complete
+Last activity: 2026-05-14 -- Phase 4 plan 03 complete
 
 Progress: [██████████] 100%
 
@@ -86,6 +86,9 @@ Recent decisions affecting current work:
 - [04-02]: endByTag is stubbed (UnsupportedOperationException) in TagServiceImpl — full implementation deferred to plan 04-04 which owns bulk end-by-tag and TagTtlCleanupJob
 - [04-02]: TagAutoConfiguration conditionally exposes TagService bean with @ConditionalOnMissingBean allowing host app override
 - [04-02]: TransactionController /credit, /debit, /transfer sub-endpoints accept accountId in body (not path) to carry tags alongside amount
+- [04-03]: stopStream lock order from→to→platform mirrors TransactionServiceImpl.transfer() exactly; prevents deadlock in concurrent rake stream settlements
+- [04-03]: tag total_credited_recipient set to toAccountAmount (not settledAmount) so derived totalRaked = totalDebited - totalCreditedRecipient holds per D-07
+- [04-03]: D-13 fallback — stopStream reads rake fields from Postgres when Redis StreamState lacks them
 
 ### Pending Todos
 
@@ -109,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T17:10:00.000Z
-Stopped at: Completed 04-02: Tags vertical slice — TagService aggregate, TagController, TagAutoConfiguration, Cucumber tag scenarios green
+Last session: 2026-05-14T17:20:00.000Z
+Stopped at: Completed 04-03: Streaming rake settlement vertical slice — stopStream three-way rake split, DB check constraint, streaming-rake.feature all GREEN
 Resume file: None
