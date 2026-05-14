@@ -142,6 +142,9 @@ public class StreamingServiceImpl implements StreamingService {
             .startedAt(OffsetDateTime.now())
             .idempotencyKey(request.idempotencyKey())
             .tags(request.tags() != null ? request.tags() : Collections.emptyList())
+            .toAccountId(request.toAccountId())
+            .rakeRate(request.rakeRate())
+            .platformAccountId(request.platformAccountId())
             .build());
 
         auditLogRepository.save(BalanceAuditLog.builder()
@@ -207,9 +210,56 @@ public class StreamingServiceImpl implements StreamingService {
         BigDecimal clampedAmount = StreamSettlementCalculator.clampToAvailableBalance(
             settledAmount, account.getBalance(), effectiveFloor);
 
+        // Phase 4 plan 03: Compute rake arithmetic BEFORE acquiring to-account / platform-account locks
+        BigDecimal rakeRate = state.rakeRate() != null ? state.rakeRate() : BigDecimal.ZERO;
+        BigDecimal rakeAmount = clampedAmount.multiply(rakeRate).setScale(18, RoundingMode.DOWN);
+        BigDecimal toAccountAmount = clampedAmount.subtract(rakeAmount);
+
+        // Phase 4 plan 03: Acquire to-account and platform-account locks per D-11 lock order (from → to → platform)
+        Account toAccount = null;
+        if (state.toAccountId() != null) {
+            toAccount = accountRepository.findWithLock(state.toAccountId())
+                .orElseThrow(() -> new AccountNotFoundException(state.toAccountId()));
+        }
+
+        Account platformAccount = null;
+        if (state.platformAccountId() != null && rakeAmount.compareTo(BigDecimal.ZERO) > 0) {
+            platformAccount = accountRepository.findWithLock(state.platformAccountId())
+                .orElseThrow(() -> new AccountNotFoundException(state.platformAccountId()));
+        }
+
         BigDecimal balanceBefore = account.getBalance();
         account.debit(clampedAmount);
         accountRepository.save(account);
+
+        // Phase 4 plan 03: Credit to-account and platform-account if applicable
+        if (toAccount != null) {
+            BigDecimal toBalanceBefore = toAccount.getBalance();
+            toAccount.credit(toAccountAmount);
+            accountRepository.save(toAccount);
+            auditLogRepository.save(BalanceAuditLog.builder()
+                .accountId(toAccount.getId())
+                .operation("STREAMING_RAKE_CREDIT")
+                .amount(toAccountAmount)
+                .balanceBefore(toBalanceBefore)
+                .balanceAfter(toAccount.getBalance())
+                .recordedAt(OffsetDateTime.now())
+                .build());
+        }
+
+        if (platformAccount != null) {
+            BigDecimal platformBalanceBefore = platformAccount.getBalance();
+            platformAccount.credit(rakeAmount);
+            accountRepository.save(platformAccount);
+            auditLogRepository.save(BalanceAuditLog.builder()
+                .accountId(platformAccount.getId())
+                .operation("STREAMING_RAKE_PLATFORM_CREDIT")
+                .amount(rakeAmount)
+                .balanceBefore(platformBalanceBefore)
+                .balanceAfter(platformAccount.getBalance())
+                .recordedAt(OffsetDateTime.now())
+                .build());
+        }
 
         String reason = request.reason() != null ? request.reason() : "stop endpoint call";
         OffsetDateTime stoppedAt = OffsetDateTime.now();
@@ -217,6 +267,11 @@ public class StreamingServiceImpl implements StreamingService {
         // Throw if no transaction row exists — silent skip would leave the stream unsettled (CR-05)
         StreamingTransaction txn = streamingTransactionRepository.findByStreamId(streamId)
             .orElseThrow(() -> new StreamNotFoundException(streamId));
+
+        // Phase 4 plan 03: D-13 fallback — if Redis state lacked rake fields but DB row has them, prefer DB values
+        String resolvedToAccountId = state.toAccountId() != null ? state.toAccountId() : txn.getToAccountId();
+        BigDecimal resolvedRakeRate = state.rakeRate() != null ? state.rakeRate() : txn.getRakeRate();
+        String resolvedPlatformAccountId = state.platformAccountId() != null ? state.platformAccountId() : txn.getPlatformAccountId();
 
         StreamingTransaction settled = StreamingTransaction.builder()
             .id(txn.getId())
@@ -232,9 +287,11 @@ public class StreamingServiceImpl implements StreamingService {
             .reason(reason)
             .idempotencyKey(txn.getIdempotencyKey())
             .tags(txn.getTags())
-            .toAccountId(txn.getToAccountId())
-            .rakeRate(txn.getRakeRate())
-            .platformAccountId(txn.getPlatformAccountId())
+            .toAccountId(resolvedToAccountId)
+            .rakeRate(resolvedRakeRate)
+            .platformAccountId(resolvedPlatformAccountId)
+            .toAccountAmount(resolvedToAccountId != null ? toAccountAmount : null)
+            .rakeAmount(resolvedToAccountId != null ? rakeAmount : null)
             .build();
         streamingTransactionRepository.save(settled);
 
@@ -248,13 +305,13 @@ public class StreamingServiceImpl implements StreamingService {
             .build());
 
         // Phase 4: update tag_committed_totals inside same @Transactional (TAG-03, D-08)
-        // For non-rake streams (plan 02), total_credited_recipient = settled amount (rake=0)
+        // Phase 4 plan 03: use toAccountAmount (not clampedAmount) so derived totalRaked = totalDebited - totalCreditedRecipient holds
         List<String> sortedTags = state.tags().stream().sorted().toList();
         for (String tag : sortedTags) {
             TagCommittedTotals totals = tagCommittedTotalsRepository.findWithLock(tag)
                 .orElseGet(() -> TagCommittedTotals.zero(tag));
             totals.addDebit(clampedAmount);
-            totals.addCreditedRecipient(clampedAmount);
+            totals.addCreditedRecipient(toAccountAmount);
             tagCommittedTotalsRepository.save(totals);
         }
 

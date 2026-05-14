@@ -1,6 +1,5 @@
 Feature: Rake-enabled streaming transactions
 
-  @Pending
   Scenario: Rake-enabled streaming settlement produces three-way split
     Given no account with id "srake-from" exists
     And no account with id "srake-to" exists
@@ -13,7 +12,6 @@ Feature: Rake-enabled streaming transactions
     Then the response status is 200
     And the stop response has settled amount greater than or equal to 0.00
 
-  @Pending
   Scenario: Zero rake rate credits full settled amount to recipient
     Given no account with id "srake-zero-from" exists
     And no account with id "srake-zero-to" exists
@@ -24,18 +22,18 @@ Feature: Rake-enabled streaming transactions
     Then the response status is 200
     And the stop response has settled amount greater than or equal to 0.00
 
-  @Pending
   Scenario: Full rake routes entire settlement to platform account
     Given no account with id "srake-full-from" exists
+    And no account with id "srake-full-to" exists
     And no account with id "srake-full-platform" exists
     And an account "srake-full-from" exists with balance 500.00
+    And an account "srake-full-to" exists with balance 0.00
     And an account "srake-full-platform" exists with balance 0.00
     When I start a stream "srake-stream-003" on account "srake-full-from" at rate 5.00 with rake rate 1.00 to account "srake-full-to" platform account "srake-full-platform" and idempotency key "ik-srake-003"
     And I stop stream "srake-stream-003"
     Then the response status is 200
     And the stop response has settled amount greater than or equal to 0.00
 
-  @Pending
   Scenario: Non-rake stream settlement credits full amount to from-account drain only
     Given no account with id "srake-noneonly-from" exists
     And an account "srake-noneonly-from" exists with balance 500.00
