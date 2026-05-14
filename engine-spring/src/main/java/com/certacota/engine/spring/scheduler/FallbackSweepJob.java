@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,6 +31,7 @@ public class FallbackSweepJob {
 
     @Scheduled(fixedDelayString = "${token-engine.streaming.fallback-sweep-seconds:300}000")
     @SchedulerLock(name = "streaming_fallback_sweep", lockAtMostFor = "PT5M", lockAtLeastFor = "PT30S")
+    @Transactional(readOnly = true)
     public void runFallbackSweep() {
         assertLocked();
 
@@ -46,13 +48,16 @@ public class FallbackSweepJob {
                 BigDecimal projected = txn.getRatePerSecond().multiply(elapsedSeconds)
                     .setScale(18, RoundingMode.DOWN);
 
-                BigDecimal effectiveFloor = accountRepository.findById(txn.getAccountId())
+                // Load account once to get both floor and balance with consistent state (WR-02)
+                var accountOpt = accountRepository.findById(txn.getAccountId());
+
+                BigDecimal effectiveFloor = accountOpt
                     .map(account -> account.getBalanceFloor() != null
                         ? account.getBalanceFloor()
                         : properties.getBalanceFloor())
                     .orElse(properties.getBalanceFloor());
 
-                BigDecimal estimatedRemainingBalance = accountRepository.findById(txn.getAccountId())
+                BigDecimal estimatedRemainingBalance = accountOpt
                     .map(account -> account.getBalance().subtract(projected))
                     .orElse(BigDecimal.ZERO);
 
