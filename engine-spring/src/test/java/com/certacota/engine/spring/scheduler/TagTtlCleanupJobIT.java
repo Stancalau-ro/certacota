@@ -41,12 +41,21 @@ class TagTtlCleanupJobIT {
             )
             """);
 
+        // WR-05 guard references stream_tags; table must exist for the NOT EXISTS subquery
+        jdbc.execute("""
+            CREATE TABLE IF NOT EXISTS stream_tags (
+                stream_id VARCHAR(255) NOT NULL,
+                tag       VARCHAR(255) NOT NULL
+            )
+            """);
+
         TokenEngineProperties properties = new TokenEngineProperties();
         job = new TagTtlCleanupJob(jdbc, properties);
     }
 
     @AfterEach
     void tearDown() {
+        jdbc.execute("DROP TABLE IF EXISTS stream_tags");
         jdbc.execute("DROP TABLE IF EXISTS tag_committed_totals");
     }
 
