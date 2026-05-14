@@ -9,7 +9,8 @@ CREATE TABLE audit_archive.balance_audit_log (
     balance_after   NUMERIC(38,18)  NOT NULL,
     idempotency_key VARCHAR(255),
     transaction_id  BIGINT,
-    recorded_at     TIMESTAMPTZ     NOT NULL
+    recorded_at     TIMESTAMPTZ     NOT NULL,
+    CONSTRAINT pk_audit_archive PRIMARY KEY (id)
 );
 
 CREATE INDEX idx_arch_audit_account_id ON audit_archive.balance_audit_log(account_id);
