@@ -201,12 +201,20 @@ public class TransactionServiceImpl implements TransactionService {
         BigDecimal effectiveFloor = fromAccount.getBalanceFloor() != null
             ? fromAccount.getBalanceFloor()
             : properties.getBalanceFloor();
-        BigDecimal resultingBalance = fromAccount.getBalance().subtract(request.amount());
+
+        // Estimated balance accounts for active streams on this account — same correctness
+        // invariant as the debit path (D-17 / CR-06).
+        List<StreamState> activeStreams = getActiveStreamsWithFallback(request.accountId());
+        BigDecimal totalProjected = activeStreams.stream()
+            .map(StreamSettlementCalculator::computeProjection)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal estimatedBalance = fromAccount.getBalance().subtract(totalProjected);
+        BigDecimal resultingBalance = estimatedBalance.subtract(request.amount());
         if (resultingBalance.compareTo(effectiveFloor) < 0) {
-            log.warn("Balance floor violation: transfer of {} would bring balance to {}, below floor {}",
+            log.warn("Balance floor violation: transfer of {} would bring estimated balance to {}, below floor {}",
                 request.amount(), resultingBalance, effectiveFloor);
             throw new BalanceFloorViolationException(
-                "Transfer of " + request.amount() + " would bring balance to " + resultingBalance
+                "Transfer of " + request.amount() + " would bring estimated balance to " + resultingBalance
                     + ", below floor " + effectiveFloor);
         }
 
