@@ -4,6 +4,7 @@ import com.certacota.engine.core.domain.StreamingTransaction;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public record StartStreamResponse(
     String streamId,
@@ -11,7 +12,8 @@ public record StartStreamResponse(
     BigDecimal ratePerSecond,
     OffsetDateTime startedAt,
     BigDecimal minimumAmount,
-    BigDecimal increment
+    BigDecimal increment,
+    List<String> tags
 ) {
     public static StartStreamResponse from(StreamingTransaction txn) {
         return new StartStreamResponse(
@@ -20,7 +22,8 @@ public record StartStreamResponse(
             txn.getRatePerSecond(),
             txn.getStartedAt(),
             txn.getMinimumAmount(),
-            txn.getIncrement()
+            txn.getIncrement(),
+            txn.getTags()
         );
     }
 }

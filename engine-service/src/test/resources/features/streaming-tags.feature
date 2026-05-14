@@ -1,6 +1,5 @@
 Feature: Streaming transactions with tags
 
-  @Pending
   Scenario: Start a stream with tags echoes tags in response
     Given no account with id "stag-001" exists
     And an account "stag-001" exists with balance 500.00
@@ -8,7 +7,6 @@ Feature: Streaming transactions with tags
     Then the response status is 201
     And the start response has tags "alpha,beta"
 
-  @Pending
   Scenario: Stop tagged stream records tag committed totals for each tag
     Given no account with id "stag-002" exists
     And an account "stag-002" exists with balance 500.00
@@ -17,7 +15,6 @@ Feature: Streaming transactions with tags
     Then the response status is 200
     And tag "session-a" has committed total debited greater than or equal to 0.00
 
-  @Pending
   Scenario: Query tag aggregate while stream is active returns in-flight debit greater than zero
     Given no account with id "stag-003" exists
     And an account "stag-003" exists with balance 500.00
@@ -27,7 +24,6 @@ Feature: Streaming transactions with tags
     And the tag aggregate in-flight debit is greater than or equal to 0.00
     And the tag aggregate estimated at is populated
 
-  @Pending
   Scenario: Query tag aggregate after stream is settled shows committed totals
     Given no account with id "stag-004" exists
     And an account "stag-004" exists with balance 500.00

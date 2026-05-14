@@ -1,6 +1,5 @@
 Feature: Discrete transactions with tags
 
-  @Pending
   Scenario: Discrete CREDIT with tags increments tag committed total credited recipient
     Given no account with id "dtag-credit-001" exists
     And an account "dtag-credit-001" exists with balance 0.00
@@ -8,7 +7,6 @@ Feature: Discrete transactions with tags
     Then the response status is 201
     And tag "promo" has committed total credited recipient greater than or equal to 0.00
 
-  @Pending
   Scenario: Discrete DEBIT with tags increments tag committed total debited
     Given no account with id "dtag-debit-001" exists
     And an account "dtag-debit-001" exists with balance 500.00
@@ -16,7 +14,6 @@ Feature: Discrete transactions with tags
     Then the response status is 201
     And tag "churn" has committed total debited greater than or equal to 0.00
 
-  @Pending
   Scenario: Discrete TRANSFER with tags updates committed total for both sides
     Given no account with id "dtag-from-001" exists
     And no account with id "dtag-to-001" exists

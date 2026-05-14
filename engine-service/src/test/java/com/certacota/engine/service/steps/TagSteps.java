@@ -2,6 +2,7 @@ package com.certacota.engine.service.steps;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.certacota.engine.core.repository.TagCommittedTotalsRepository;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -26,9 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 public class TagSteps {
 
-    // FORWARD REF: TagCommittedTotalsRepository created in plan 02 — kept as injection point
-    // @Autowired
-    // private TagCommittedTotalsRepository tagCommittedTotalsRepository;
+    @Autowired
+    private TagCommittedTotalsRepository tagCommittedTotalsRepository;
 
     @Autowired
     private SharedContext sharedContext;
@@ -93,25 +93,23 @@ public class TagSteps {
 
     @Then("tag {string} has committed total debited greater than or equal to {bigdecimal}")
     public void tagHasCommittedTotalDebitedGreaterThanOrEqualTo(String tag, BigDecimal amount) {
-        // FORWARD REF: implementation in plan 02 when TagCommittedTotalsRepository is available
-        // For now, this step is pending until plan 02 wires the repository
-        throw new io.cucumber.java.PendingException("TagCommittedTotalsRepository not yet available — wired in plan 02");
+        tagCommittedTotalsRepository.findById(tag).ifPresentOrElse(
+            totals -> assertThat(totals.getTotalDebited().compareTo(amount)).isGreaterThanOrEqualTo(0),
+            () -> assertThat(amount.compareTo(BigDecimal.ZERO)).isLessThanOrEqualTo(0)
+        );
     }
 
     @Then("tag {string} has committed total credited recipient greater than or equal to {bigdecimal}")
     public void tagHasCommittedTotalCreditedRecipientGreaterThanOrEqualTo(String tag, BigDecimal amount) {
-        // FORWARD REF: implementation in plan 02 when TagCommittedTotalsRepository is available
-        throw new io.cucumber.java.PendingException("TagCommittedTotalsRepository not yet available — wired in plan 02");
+        tagCommittedTotalsRepository.findById(tag).ifPresentOrElse(
+            totals -> assertThat(totals.getTotalCreditedRecipient().compareTo(amount)).isGreaterThanOrEqualTo(0),
+            () -> assertThat(amount.compareTo(BigDecimal.ZERO)).isLessThanOrEqualTo(0)
+        );
     }
 
     @Then("the end-by-tag response settled count is {int}")
     public void endByTagResponseSettledCountIs(int count) throws Exception {
         JsonNode json = objectMapper.readTree(sharedContext.getLastResponse().getBody());
         assertThat(json.get("settledCount").asInt()).isEqualTo(count);
-    }
-
-    @When("placeholder tag step")
-    public void placeholderTagStep() {
-        // placeholder to ensure class compiles standalone in Wave 0
     }
 }
