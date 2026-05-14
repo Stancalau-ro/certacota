@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 01-03: Phase 1 Foundation complete — all 3 plans done, 8 requirements verified green"
-last_updated: "2026-05-14T13:31:46.998Z"
-last_activity: 2026-05-14 -- Phase 4 planning complete
+stopped_at: "Completed 04-01: Phase 4 Wave 0 complete — metadata portability + test scaffolding"
+last_updated: "2026-05-14T16:55:00.000Z"
+last_activity: 2026-05-14 -- Phase 4 plan 01 complete
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 14
-  completed_plans: 10
-  percent: 50
+  completed_plans: 11
+  percent: 54
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 4 of 6 (Tags, Rake on Streaming, and Threshold Events)
-Plan: 0 of TBD in current phase
-Status: Ready to execute
-Last activity: 2026-05-14 -- Phase 4 planning complete
+Plan: 1 of 4 in current phase (04-01 complete)
+Status: Executing
+Last activity: 2026-05-14 -- Phase 4 plan 01 complete
 
 Progress: [██████████] 100%
 
@@ -79,6 +79,9 @@ Recent decisions affecting current work:
 - [03-02]: transactionId omitted from streaming audit log entries — fk_audit_dtx FK only covers discrete_transactions table
 - [03-03]: AutoTerminationScheduler uses @Lazy @Autowired on StreamingService injection to break circular dependency with StreamingServiceImpl
 - [03-03]: OPS-02 resolved — AuditArchivalJob and idempotency TTL sweep implemented with ShedLock guards
+- [04-01]: jackson-databind added as compileOnly to engine-core — keeps engine-core framework-light while enabling MetadataConverter compilation
+- [04-01]: Account.metadata also retrofitted from @JdbcTypeCode to @Convert — all three entity metadata fields now portable
+- [04-01]: Spring Boot 3.5 @TransactionalEventListener requires @Transactional(NOT_SUPPORTED) propagation on methods in @Transactional-annotated classes
 
 ### Pending Todos
 
@@ -102,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-13T11:45:10.072Z
-Stopped at: Completed 01-03: Phase 1 Foundation complete — all 3 plans done, 8 requirements verified green
+Last session: 2026-05-14T16:55:00.000Z
+Stopped at: Completed 04-01: Phase 4 Wave 0 complete — metadata portability + test scaffolding
 Resume file: None

@@ -66,8 +66,8 @@
 
 ### Open Metadata
 
-- [ ] **META-01**: Every transaction (discrete and streaming) accepts a caller-supplied key-value metadata map; metadata is immutable after creation
-- [ ] **META-02**: Metadata flows through unchanged to all audit log entries and emitted events associated with that transaction
+- [x] **META-01**: Every transaction (discrete and streaming) accepts a caller-supplied key-value metadata map; metadata is immutable after creation
+- [x] **META-02**: Metadata flows through unchanged to all audit log entries and emitted events associated with that transaction
 
 ### External Event Emission
 
@@ -137,8 +137,8 @@
 | DTX-02 | Phase 2 | Pending |
 | DTX-03 | Phase 2 | Pending |
 | DTX-04 | Phase 2 | Pending |
-| META-01 | Phase 2 | Pending |
-| META-02 | Phase 2 | Pending |
+| META-01 | Phase 4 | Complete (04-01) |
+| META-02 | Phase 4 | Complete (04-01) |
 | RAKE-01 | Phase 2 | Pending |
 | STR-01 | Phase 3 | Pending |
 | STR-02 | Phase 3 | Pending |

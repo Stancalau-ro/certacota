@@ -113,7 +113,7 @@ Cross-cutting constraints:
 Plans:
 
 **Wave 0**
-- [ ] 04-01-PLAN.md — Wave 0: metadata portability retrofit (V10, MetadataConverter, DiscreteTransaction/StreamingTransaction entity changes) + Phase 4 Cucumber feature files + TagSteps skeleton
+- [x] 04-01-PLAN.md — Wave 0: metadata portability retrofit (V10, MetadataConverter, DiscreteTransaction/StreamingTransaction entity changes) + Phase 4 Cucumber feature files + TagSteps skeleton
 
 **Wave 1** *(blocked on Wave 0)*
 - [ ] 04-02-PLAN.md — Tags vertical slice: V11 schema, TagCommittedTotals entity/repo, tags fields on StartStreamRequest/CreditRequest/DebitRequest/PostTransferRequest, RedisStreamRegistry tag-set extension, StreamingServiceImpl + TransactionServiceImpl tag wiring, TagServiceImpl.aggregate, TagController, TagAutoConfiguration
@@ -157,6 +157,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
 | 3. Streaming Transactions | 4/4 | Complete   | 2026-05-14 |
-| 4. Tags and Rake on Streaming | 0/TBD | Not started | - |
+| 4. Tags and Rake on Streaming | 1/4 | In progress | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |
