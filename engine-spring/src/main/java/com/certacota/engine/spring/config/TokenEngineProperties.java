@@ -39,4 +39,13 @@ public class TokenEngineProperties {
         private String sentinelMaster;
         private String sentinelNodes;
     }
+
+    private TagProperties tags = new TagProperties();
+
+    @Getter
+    @Setter
+    public static class TagProperties {
+        private int ttlHours = 24;
+        private String cleanupCron = "0 0 3 * * *";
+    }
 }
