@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation** - Accounts, balance floor, idempotency, audit log, and observability scaffold (completed 2026-05-13)
 - [x] **Phase 2: Discrete Transactions** - Credits, debits, floor enforcement, concurrency correctness, open metadata, and rake on discrete transactions (completed 2026-05-13)
 - [x] **Phase 3: Streaming Transactions** - Rate-based drain, mathematical projection settlement, in-memory StreamRegistry, forward balance estimation, minimum amount, increment billing, and auto-termination (completed 2026-05-14)
-- [ ] **Phase 4: Tags and Rake on Streaming** - Tag grouping, atomic multi-stream settlement, three-way rake splits on streaming transactions, and tag aggregate queries
+- [x] **Phase 4: Tags and Rake on Streaming** - Tag grouping, atomic multi-stream settlement, three-way rake splits on streaming transactions, and tag aggregate queries (completed 2026-05-14)
 - [ ] **Phase 5: External Event Emission** - Transactional outbox pattern with at-least-once delivery
 - [ ] **Phase 6: Dual Packaging** - Module split into engine-core / engine-spring / engine-service; embedding verification
 
@@ -122,7 +122,7 @@ Plans:
 - [x] 04-03-PLAN.md — Streaming rake settlement vertical slice: V12 schema with check constraint, StreamingServiceImpl.stopStream three-way debit/credit/credit, lock ordering from→to→platform→tags(alphabetical)
 
 **Wave 3** *(blocked on Wave 2)*
-- [ ] 04-04-PLAN.md — End-by-tag bulk settlement + TagTtlCleanupJob: TagServiceImpl.endByTag full implementation, TokenEngineProperties.TagProperties, ShedLock-guarded scheduled cleanup
+- [x] 04-04-PLAN.md — End-by-tag bulk settlement + TagTtlCleanupJob: TagServiceImpl.endByTag full implementation, TokenEngineProperties.TagProperties, ShedLock-guarded scheduled cleanup
 **UI hint**: no
 
 ### Phase 5: External Event Emission
@@ -157,6 +157,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
 | 3. Streaming Transactions | 4/4 | Complete   | 2026-05-14 |
-| 4. Tags and Rake on Streaming | 3/4 | In progress | - |
+| 4. Tags and Rake on Streaming | 4/4 | Complete   | 2026-05-14 |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |

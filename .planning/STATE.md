@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 04-03: Streaming rake settlement — stopStream three-way split, chk_str_rake_balanced constraint, streaming-rake.feature GREEN"
-last_updated: "2026-05-14T17:20:00.000Z"
-last_activity: 2026-05-14 -- Phase 4 plan 03 complete
+stopped_at: "Completed 04-04: End-by-tag bulk settlement + TagTtlCleanupJob — Phase 4 complete, all 4 plans done, 88 tests GREEN"
+last_updated: "2026-05-14T17:30:00.000Z"
+last_activity: 2026-05-14 -- Phase 4 complete (04-04 done)
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 14
-  completed_plans: 11
-  percent: 54
+  completed_plans: 12
+  percent: 57
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 4 of 6 (Tags, Rake on Streaming, and Threshold Events)
-Plan: 3 of 4 in current phase (04-03 complete)
+Plan: 4 of 4 in current phase (04-04 complete — Phase 4 DONE)
 Status: Executing
-Last activity: 2026-05-14 -- Phase 4 plan 03 complete
+Last activity: 2026-05-14 -- Phase 4 complete (04-04 done)
 
 Progress: [██████████] 100%
 
@@ -89,6 +89,9 @@ Recent decisions affecting current work:
 - [04-03]: stopStream lock order from→to→platform mirrors TransactionServiceImpl.transfer() exactly; prevents deadlock in concurrent rake stream settlements
 - [04-03]: tag total_credited_recipient set to toAccountAmount (not settledAmount) so derived totalRaked = totalDebited - totalCreditedRecipient holds per D-07
 - [04-03]: D-13 fallback — stopStream reads rake fields from Postgres when Redis StreamState lacks them
+- [04-04]: All-or-nothing @Transactional for endByTag — no try/catch around inner stopStream(); exception rolls back entire batch including pending idempotency key for clean retry (TAG-02, Pitfall 1)
+- [04-04]: doCleanup() package-private split in TagTtlCleanupJob — IT calls doCleanup() to bypass assertLocked(); runCleanup() delegates after assertLocked() for production use
+- [04-04]: endByTag uses ignoreMinimum=false — client-initiated stop, not auto-termination; minimumAmount semantics apply normally per STR-07
 
 ### Pending Todos
 
@@ -112,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T17:20:00.000Z
-Stopped at: Completed 04-03: Streaming rake settlement vertical slice — stopStream three-way rake split, DB check constraint, streaming-rake.feature all GREEN
+Last session: 2026-05-14T17:30:00.000Z
+Stopped at: Completed 04-04: End-by-tag bulk settlement + TagTtlCleanupJob — Phase 4 complete, all 9 requirements GREEN, 88 tests passing
 Resume file: None
