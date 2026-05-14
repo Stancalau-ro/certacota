@@ -1,10 +1,11 @@
 ---
 phase: 3
 slug: streaming-transactions
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-14
+completed: 2026-05-14
 ---
 
 # Phase 3 — Validation Strategy
@@ -38,19 +39,19 @@ created: 2026-05-14
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 3-01-01 | 01 | 1 | STR-01 | T-3-01 | stream start rejected on CLOSED account (409) | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-01-02 | 01 | 1 | STR-02 | T-3-03 | settle clamped to `min(projected, available-floor)` | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-01-03 | 01 | 1 | STR-03 | — | estimated balance without DB read per query | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-01-04 | 01 | 1 | BAL-02 | — | `estimatedBalance`, `estimatedAt`, `estimatedDrainAt` correct | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-02-01 | 02 | 2 | STR-07 | — | `minimumAmount` enforced; `ignoreMinimum=true` waives | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-02-02 | 02 | 2 | STR-08 | — | increment billing: `floor(rate × elapsed / increment) × increment` | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-02-03 | 02 | 2 | STR-09 | — | auto-termination fires when `remainingBalance < increment` | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-02-04 | 02 | 2 | STR-06 | — | no floating-point in arithmetic path; BigDecimal throughout | Unit test | `./gradlew :engine-spring:test` | ❌ W0 | ⬜ pending |
-| 3-03-01 | 03 | 3 | AUTO-01 | — | auto-terminate at floor; settle actual elapsed (min waived) | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-03-02 | 03 | 3 | AUTO-02 | — | scheduler reschedules on balance change; Redisson enqueue verified | Integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-03-03 | 03 | 3 | AUTO-03 | — | `reason = "balance_exhaustion"` distinguishable in audit log | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
-| 3-04-01 | 04 | 4 | STR-04 | T-3-02 | concurrent streaming + discrete: no double-spend, no lost update | JUnit 5 `@SpringBootTest` | `./gradlew :engine-service:test --tests "*StreamingConcurrencyTest*"` | ❌ W0 | ⬜ pending |
-| 3-04-02 | 04 | 4 | STR-05 | — | atomic settlement; Redis and Postgres never permanently divergent | Cucumber integration | `./gradlew :engine-service:test` | ❌ W0 | ⬜ pending |
+| 3-01-01 | 01 | 1 | STR-01 | T-3-01 | stream start rejected on CLOSED account (409) | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-01-02 | 01 | 1 | STR-02 | T-3-03 | settle clamped to `min(projected, available-floor)` | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-01-03 | 01 | 1 | STR-03 | — | estimated balance without DB read per query | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-01-04 | 01 | 1 | BAL-02 | — | `estimatedBalance`, `estimatedAt`, `estimatedDrainAt` correct | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-02-01 | 02 | 2 | STR-07 | — | `minimumAmount` enforced; `ignoreMinimum=true` waives | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-02-02 | 02 | 2 | STR-08 | — | increment billing: `floor(rate × elapsed / increment) × increment` | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-02-03 | 02 | 2 | STR-09 | — | auto-termination fires when `remainingBalance < increment` | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-02-04 | 02 | 2 | STR-06 | — | no floating-point in arithmetic path; BigDecimal throughout | Unit test | `./gradlew :engine-spring:test` | ✅ | ✅ green |
+| 3-03-01 | 03 | 3 | AUTO-01 | — | auto-terminate at floor; settle actual elapsed (min waived) | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-03-02 | 03 | 3 | AUTO-02 | — | scheduler reschedules on balance change; Redisson enqueue verified | Integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-03-03 | 03 | 3 | AUTO-03 | — | `reason = "balance_exhaustion"` distinguishable in audit log | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
+| 3-04-01 | 04 | 4 | STR-04 | T-3-02 | concurrent streaming + discrete: no double-spend, no lost update | JUnit 5 `@SpringBootTest` | `./gradlew :engine-service:test --tests "*StreamingConcurrencyTest*"` | ✅ | ✅ green |
+| 3-04-02 | 04 | 4 | STR-05 | — | atomic settlement; Redis and Postgres never permanently divergent | Cucumber integration | `./gradlew :engine-service:test` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -58,19 +59,19 @@ created: 2026-05-14
 
 ## Wave 0 Requirements
 
-- [ ] `engine-service/src/main/resources/db/migration/V7__create_streaming_transactions.sql` — streaming_transactions table
-- [ ] `engine-service/src/main/resources/db/migration/V8__create_shedlock.sql` — shedlock table for scheduler guards
-- [ ] `engine-service/src/main/resources/db/migration/V9__create_audit_archive.sql` — audit_archive schema + table
-- [ ] `engine-service/src/test/java/.../TestcontainersConfiguration.java` — MODIFY: add Redis `GenericContainer` with `@DynamicPropertySource`
-- [ ] `engine-service/src/test/resources/features/streaming-start.feature` — covers STR-01
-- [ ] `engine-service/src/test/resources/features/streaming-stop.feature` — covers STR-02, STR-05
-- [ ] `engine-service/src/test/resources/features/streaming-estimation.feature` — covers STR-03, BAL-02
-- [ ] `engine-service/src/test/resources/features/streaming-minimum-amount.feature` — covers STR-07
-- [ ] `engine-service/src/test/resources/features/streaming-increment.feature` — covers STR-08, STR-09
-- [ ] `engine-service/src/test/resources/features/streaming-auto-termination.feature` — covers AUTO-01, AUTO-02, AUTO-03
-- [ ] `engine-service/src/test/java/.../steps/StreamingSteps.java` — step definitions for all streaming features
-- [ ] `engine-service/src/test/java/.../StreamingConcurrencyTest.java` — covers STR-04
-- [ ] `engine-spring/src/test/java/.../ArithmeticTest.java` — covers STR-06 (BigDecimal arithmetic, no Spring context)
+- [x] `engine-service/src/main/resources/db/migration/V7__create_streaming_transactions.sql` — streaming_transactions table
+- [x] `engine-service/src/main/resources/db/migration/V8__create_shedlock.sql` — shedlock table for scheduler guards
+- [x] `engine-service/src/main/resources/db/migration/V9__create_audit_archive.sql` — audit_archive schema + table
+- [x] `engine-service/src/test/java/.../TestcontainersConfiguration.java` — MODIFY: add Redis `GenericContainer` with `@DynamicPropertySource`
+- [x] `engine-service/src/test/resources/features/streaming-start.feature` — covers STR-01
+- [x] `engine-service/src/test/resources/features/streaming-stop.feature` — covers STR-02, STR-05
+- [x] `engine-service/src/test/resources/features/streaming-estimation.feature` — covers STR-03, BAL-02
+- [x] `engine-service/src/test/resources/features/streaming-minimum-amount.feature` — covers STR-07
+- [x] `engine-service/src/test/resources/features/streaming-increment.feature` — covers STR-08, STR-09
+- [x] `engine-service/src/test/resources/features/streaming-auto-termination.feature` — covers AUTO-01, AUTO-02, AUTO-03
+- [x] `engine-service/src/test/java/.../steps/StreamingSteps.java` — step definitions for all streaming features
+- [x] `engine-service/src/test/java/.../StreamingConcurrencyTest.java` — covers STR-04
+- [x] `engine-spring/src/test/java/.../ArithmeticTest.java` — covers STR-06 (BigDecimal arithmetic, no Spring context)
 
 ---
 
@@ -85,11 +86,11 @@ created: 2026-05-14
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 90s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 90s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** complete — all 13 requirements verified by automated tests, full suite GREEN (2026-05-14)
