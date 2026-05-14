@@ -83,6 +83,12 @@ public class StreamingTransaction {
     @Column(name = "platform_account_id")
     private String platformAccountId;
 
+    @Column(name = "to_account_amount", precision = 38, scale = 18)
+    private BigDecimal toAccountAmount;
+
+    @Column(name = "rake_amount", precision = 38, scale = 18)
+    private BigDecimal rakeAmount;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "stream_tags",
