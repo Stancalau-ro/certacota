@@ -309,7 +309,7 @@ public class StreamingServiceImpl implements StreamingService {
                     ? account.getBalanceFloor()
                     : properties.getBalanceFloor();
 
-                StreamState state = StreamState.fromDbRow(txn, 0L);
+                StreamState state = StreamState.fromDbRow(txn);
                 BigDecimal projection = StreamSettlementCalculator.computeProjection(state);
                 BigDecimal estimatedBalance = account.getBalance().subtract(projection);
 

@@ -38,18 +38,13 @@ public record StreamState(
         );
     }
 
-    public static StreamState fromDbRow(StreamingTransaction txn, long jvmStartNano) {
-        long currentMillis = System.currentTimeMillis();
-        long currentNano = System.nanoTime();
-        long elapsedSinceStartMillis = currentMillis - txn.getStartedAt().toInstant().toEpochMilli();
-        long startedAtNano = currentNano - (elapsedSinceStartMillis * 1_000_000L);
-
+    public static StreamState fromDbRow(StreamingTransaction txn) {
         return new StreamState(
             txn.getStreamId(),
             txn.getAccountId(),
             txn.getRatePerSecond(),
             txn.getStartedAt().toInstant().toEpochMilli(),
-            startedAtNano,
+            0L,
             false,
             txn.getMinimumAmount(),
             txn.getIncrement()
