@@ -36,6 +36,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
@@ -241,6 +242,7 @@ public class StreamingServiceImpl implements StreamingService {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void onStreamSettled(StreamSettledEvent event) {
         autoTerminationScheduler.cancel(event.streamId());
         streamRegistry.remove(event.streamId(), event.accountId());

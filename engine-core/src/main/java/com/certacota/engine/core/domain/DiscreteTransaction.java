@@ -1,6 +1,7 @@
 package com.certacota.engine.core.domain;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -12,8 +13,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -41,8 +40,8 @@ public class DiscreteTransaction {
     @Column(name = "amount", nullable = false, updatable = false, precision = 38, scale = 18)
     private BigDecimal amount;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "metadata", columnDefinition = "jsonb")
+    @Convert(converter = MetadataConverter.class)
+    @Column(name = "metadata")
     private Map<String, Object> metadata;
 
     @Column(name = "idempotency_key", updatable = false)

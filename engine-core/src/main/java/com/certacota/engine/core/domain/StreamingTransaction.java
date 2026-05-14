@@ -1,6 +1,7 @@
 package com.certacota.engine.core.domain;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 @Entity
 @Table(name = "streaming_transactions")
@@ -62,4 +64,8 @@ public class StreamingTransaction {
 
     @Column(name = "idempotency_key", updatable = false)
     private String idempotencyKey;
+
+    @Convert(converter = MetadataConverter.class)
+    @Column(name = "metadata")
+    private Map<String, Object> metadata;
 }
