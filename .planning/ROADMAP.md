@@ -109,7 +109,20 @@ Cross-cutting constraints:
   2. A tag aggregate query returns committed total (Postgres-backed) plus in-flight projection (sum of rate x elapsed for all active streams carrying that tag) without a full table scan; a discrete transaction carrying a tag contributes its posted amount to the tag committed total; the response separates totalDebited, totalCreditedRecipient, and derived totalRaked on both the committed and in-flight sides
   3. A rake-enabled streaming transaction executes as an atomic three-way debit/credit/credit on settlement; the debit to the from-account equals the sum of credits (enforced by DB check constraint); zero-rake, full-rake, and hybrid configurations all produce balanced arithmetic
   4. Tag cache entries are evicted by TTL after the configured inactivity period; a background job cleans up `tag_committed_totals` rows keyed on `last_activity_at`
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+
+**Wave 0**
+- [ ] 04-01-PLAN.md — Wave 0: metadata portability retrofit (V10, MetadataConverter, DiscreteTransaction/StreamingTransaction entity changes) + Phase 4 Cucumber feature files + TagSteps skeleton
+
+**Wave 1** *(blocked on Wave 0)*
+- [ ] 04-02-PLAN.md — Tags vertical slice: V11 schema, TagCommittedTotals entity/repo, tags fields on StartStreamRequest/CreditRequest/DebitRequest/PostTransferRequest, RedisStreamRegistry tag-set extension, StreamingServiceImpl + TransactionServiceImpl tag wiring, TagServiceImpl.aggregate, TagController, TagAutoConfiguration
+
+**Wave 2** *(blocked on Wave 1)*
+- [ ] 04-03-PLAN.md — Streaming rake settlement vertical slice: V12 schema with check constraint, StreamingServiceImpl.stopStream three-way debit/credit/credit, lock ordering from→to→platform→tags(alphabetical)
+
+**Wave 3** *(blocked on Wave 2)*
+- [ ] 04-04-PLAN.md — End-by-tag bulk settlement + TagTtlCleanupJob: TagServiceImpl.endByTag full implementation, TokenEngineProperties.TagProperties, ShedLock-guarded scheduled cleanup
 **UI hint**: no
 
 ### Phase 5: External Event Emission
