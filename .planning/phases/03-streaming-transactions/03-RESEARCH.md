@@ -931,22 +931,25 @@ Nothing found requiring pre-existing data migration. All state is created fresh 
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **nanoTime cross-pod tracking:**
    - What we know: nanoTime is JVM-relative (D-24); Redis stores stream metadata that may be read by a different pod
    - What's unclear: Should `startedAtNano` be stored in Redis at all, or only wall-clock millis?
    - Recommendation: Store both. Use `nanoTime` only if the stream's `startedAtNano` was set by the current JVM session (track JVM start nanoTime on startup and compare). This is an implementation detail the planner can decide.
+   - **RESOLVED:** Store both `startedAtNano` and `startedAtEpochMillis` in the Redis hash. A `startedAtNanoFromCurrentJvm` boolean is computed at lookup time by checking `storedNano >= JVM_START_NANO` (a static long captured at JVM startup in `RedisStreamRegistry`). This flag is stored on `StreamState` and drives elapsed-time selection in `StreamingServiceImpl`.
 
 2. **`RDelayedQueue` remove-by-value semantics:**
    - What we know: `RDelayedQueue.remove(streamId)` removes the first occurrence of a value equal to `streamId`
    - What's unclear: If the same `streamId` was enqueued twice (reschedule without remove), both entries exist and only one is removed
    - Recommendation: Always call `cancel(streamId)` before re-enqueuing to ensure exactly one entry per stream. Document this as an ordering invariant.
+   - **RESOLVED:** Cancel-before-enqueue is enforced as a plan invariant. `AutoTerminationScheduler.cancel(streamId)` is called before every `enqueue()` in `TransactionServiceImpl.debit()` (per D-27), and before `streamRegistry.remove()` in `StreamingServiceImpl.stopStream()`. This guarantees at most one pending entry per stream ID in the delayed queue at any time.
 
 3. **`TokenEngineAutoConfiguration` growth:**
    - What we know: Phase 3 adds 4+ new beans (StreamRegistry, StreamingService, AutoTerminationScheduler, FallbackSweepJob, AuditArchivalJob, LockProvider)
    - What's unclear: Should a separate `StreamingAutoConfiguration` be introduced, or add to existing `TokenEngineAutoConfiguration`?
    - Recommendation: Create a dedicated `StreamingAutoConfiguration` class. The existing autoconfiguration is only 50 lines and already has two bean definitions; adding 6 more will make it unwieldy.
+   - **RESOLVED:** `StreamingAutoConfiguration` is introduced as a separate `@AutoConfiguration` class registered in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`. It owns all streaming-related beans: `StreamRegistry`, `StreamingService`, `AutoTerminationScheduler`, `FallbackSweepJob`, `AuditArchivalJob`, `LockProvider`, and the optional `sentinelConnectionFactory`.
 
 ---
 
