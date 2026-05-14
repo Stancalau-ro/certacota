@@ -210,22 +210,32 @@ public class StreamingServiceImpl implements StreamingService {
         BigDecimal clampedAmount = StreamSettlementCalculator.clampToAvailableBalance(
             settledAmount, account.getBalance(), effectiveFloor);
 
-        // Phase 4 plan 03: Compute rake arithmetic BEFORE acquiring to-account / platform-account locks
-        BigDecimal rakeRate = state.rakeRate() != null ? state.rakeRate() : BigDecimal.ZERO;
-        BigDecimal rakeAmount = clampedAmount.multiply(rakeRate).setScale(18, RoundingMode.DOWN);
+        // CR-01: Fetch DB row and resolve rake fields BEFORE arithmetic so crash-recovered Redis
+        // state (fromDbRow) never produces rakeAmount=0 when rakeRate is configured in the DB.
+        StreamingTransaction txn = streamingTransactionRepository.findByStreamId(streamId)
+            .orElseThrow(() -> new StreamNotFoundException(streamId));
+
+        String resolvedToAccountId = state.toAccountId() != null ? state.toAccountId() : txn.getToAccountId();
+        BigDecimal resolvedRakeRate = state.rakeRate() != null ? state.rakeRate() : txn.getRakeRate();
+        String resolvedPlatformAccountId = state.platformAccountId() != null
+            ? state.platformAccountId() : txn.getPlatformAccountId();
+
+        // Phase 4 plan 03: Compute rake arithmetic using resolved values
+        BigDecimal effectiveRakeRate = resolvedRakeRate != null ? resolvedRakeRate : BigDecimal.ZERO;
+        BigDecimal rakeAmount = clampedAmount.multiply(effectiveRakeRate).setScale(18, RoundingMode.DOWN);
         BigDecimal toAccountAmount = clampedAmount.subtract(rakeAmount);
 
         // Phase 4 plan 03: Acquire to-account and platform-account locks per D-11 lock order (from → to → platform)
         Account toAccount = null;
-        if (state.toAccountId() != null) {
-            toAccount = accountRepository.findWithLock(state.toAccountId())
-                .orElseThrow(() -> new AccountNotFoundException(state.toAccountId()));
+        if (resolvedToAccountId != null) {
+            toAccount = accountRepository.findWithLock(resolvedToAccountId)
+                .orElseThrow(() -> new AccountNotFoundException(resolvedToAccountId));
         }
 
         Account platformAccount = null;
-        if (state.platformAccountId() != null && rakeAmount.compareTo(BigDecimal.ZERO) > 0) {
-            platformAccount = accountRepository.findWithLock(state.platformAccountId())
-                .orElseThrow(() -> new AccountNotFoundException(state.platformAccountId()));
+        if (resolvedPlatformAccountId != null && rakeAmount.compareTo(BigDecimal.ZERO) > 0) {
+            platformAccount = accountRepository.findWithLock(resolvedPlatformAccountId)
+                .orElseThrow(() -> new AccountNotFoundException(resolvedPlatformAccountId));
         }
 
         BigDecimal balanceBefore = account.getBalance();
@@ -264,15 +274,6 @@ public class StreamingServiceImpl implements StreamingService {
         String reason = request.reason() != null ? request.reason() : "stop endpoint call";
         OffsetDateTime stoppedAt = OffsetDateTime.now();
 
-        // Throw if no transaction row exists — silent skip would leave the stream unsettled (CR-05)
-        StreamingTransaction txn = streamingTransactionRepository.findByStreamId(streamId)
-            .orElseThrow(() -> new StreamNotFoundException(streamId));
-
-        // Phase 4 plan 03: D-13 fallback — if Redis state lacked rake fields but DB row has them, prefer DB values
-        String resolvedToAccountId = state.toAccountId() != null ? state.toAccountId() : txn.getToAccountId();
-        BigDecimal resolvedRakeRate = state.rakeRate() != null ? state.rakeRate() : txn.getRakeRate();
-        String resolvedPlatformAccountId = state.platformAccountId() != null ? state.platformAccountId() : txn.getPlatformAccountId();
-
         StreamingTransaction settled = StreamingTransaction.builder()
             .id(txn.getId())
             .streamId(txn.getStreamId())
@@ -290,8 +291,8 @@ public class StreamingServiceImpl implements StreamingService {
             .toAccountId(resolvedToAccountId)
             .rakeRate(resolvedRakeRate)
             .platformAccountId(resolvedPlatformAccountId)
-            .toAccountAmount(resolvedToAccountId != null ? toAccountAmount : null)
-            .rakeAmount(resolvedToAccountId != null ? rakeAmount : null)
+            .toAccountAmount(toAccountAmount)
+            .rakeAmount(rakeAmount)
             .build();
         streamingTransactionRepository.save(settled);
 
@@ -325,8 +326,13 @@ public class StreamingServiceImpl implements StreamingService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void onStreamSettled(StreamSettledEvent event) {
-        autoTerminationScheduler.cancel(event.streamId());
-        streamRegistry.remove(event.streamId(), event.accountId(), event.tags());
+        try {
+            autoTerminationScheduler.cancel(event.streamId());
+            streamRegistry.remove(event.streamId(), event.accountId(), event.tags());
+        } catch (Exception e) {
+            log.warn("Post-commit cleanup failed for stream {}; startup reconciliation will resync: {}",
+                event.streamId(), e.getMessage());
+        }
     }
 
     @Override
