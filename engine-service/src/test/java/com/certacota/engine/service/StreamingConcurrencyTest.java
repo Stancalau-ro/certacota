@@ -106,7 +106,7 @@ class StreamingConcurrencyTest {
                     body.put("idempotencyKey", "conc-debit-" + index);
                     ResponseEntity<String> response = restTemplate.exchange(
                         debitUrl, HttpMethod.POST, new HttpEntity<>(body, headers), String.class);
-                    if (response.getStatusCode().value() == 200) {
+                    if (response.getStatusCode().value() == 201) {
                         successCount.incrementAndGet();
                     } else {
                         rejectedCount.incrementAndGet();
