@@ -3,6 +3,9 @@ package com.certacota.engine.service.controller;
 import com.certacota.engine.core.exception.AccountClosedException;
 import com.certacota.engine.core.exception.AccountNotFoundException;
 import com.certacota.engine.core.exception.BalanceFloorViolationException;
+import com.certacota.engine.core.exception.RedisUnavailableException;
+import com.certacota.engine.core.exception.StreamAlreadyActiveException;
+import com.certacota.engine.core.exception.StreamNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -42,5 +45,26 @@ public class GlobalExceptionHandler {
     public Map<String, String> handleValidation(MethodArgumentNotValidException ex) {
         log.warn("Validation failed: {}", ex.getMessage());
         return Map.of("error", "Validation failed: " + ex.getBindingResult().getAllErrors().get(0).getDefaultMessage());
+    }
+
+    @ExceptionHandler(StreamNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleStreamNotFound(StreamNotFoundException ex) {
+        log.warn("Stream not found: {}", ex.getMessage());
+        return Map.of("error", ex.getMessage());
+    }
+
+    @ExceptionHandler(RedisUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public Map<String, String> handleRedisUnavailable(RedisUnavailableException ex) {
+        log.warn("Redis unavailable: {}", ex.getMessage());
+        return Map.of("error", ex.getMessage());
+    }
+
+    @ExceptionHandler(StreamAlreadyActiveException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleStreamAlreadyActive(StreamAlreadyActiveException ex) {
+        log.warn("Stream already active: {}", ex.getMessage());
+        return Map.of("error", ex.getMessage());
     }
 }

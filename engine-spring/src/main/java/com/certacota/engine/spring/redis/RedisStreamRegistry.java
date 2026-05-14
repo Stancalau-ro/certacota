@@ -6,7 +6,7 @@ import com.certacota.engine.core.service.StreamRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -26,7 +26,7 @@ public class RedisStreamRegistry implements StreamRegistry {
     private static final String ACCOUNT_STREAMS_PREFIX = "account-streams:";
     private static final long JVM_START_NANO = System.nanoTime();
 
-    private final RedisTemplate<String, String> redisTemplate;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public void register(StreamState state) {

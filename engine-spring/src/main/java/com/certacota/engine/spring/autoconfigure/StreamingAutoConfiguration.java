@@ -1,8 +1,15 @@
 package com.certacota.engine.spring.autoconfigure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.certacota.engine.core.repository.AccountRepository;
+import com.certacota.engine.core.repository.BalanceAuditLogRepository;
+import com.certacota.engine.core.repository.IdempotencyKeyRepository;
+import com.certacota.engine.core.repository.StreamingTransactionRepository;
 import com.certacota.engine.core.service.StreamRegistry;
+import com.certacota.engine.core.service.StreamingService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
 import com.certacota.engine.spring.redis.RedisStreamRegistry;
+import com.certacota.engine.spring.service.StreamingServiceImpl;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
@@ -11,12 +18,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -31,8 +38,24 @@ public class StreamingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public StreamRegistry streamRegistry(RedisTemplate<String, String> redisTemplate) {
-        return new RedisStreamRegistry(redisTemplate);
+    public StreamRegistry streamRegistry(StringRedisTemplate stringRedisTemplate) {
+        return new RedisStreamRegistry(stringRedisTemplate);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public StreamingService streamingService(
+            AccountRepository accountRepository,
+            StreamingTransactionRepository streamingTransactionRepository,
+            BalanceAuditLogRepository auditLogRepository,
+            IdempotencyKeyRepository idempotencyKeyRepository,
+            StreamRegistry streamRegistry,
+            TokenEngineProperties properties,
+            ObjectMapper objectMapper,
+            ApplicationEventPublisher eventPublisher) {
+        return new StreamingServiceImpl(
+            accountRepository, streamingTransactionRepository, auditLogRepository,
+            idempotencyKeyRepository, streamRegistry, properties, objectMapper, eventPublisher);
     }
 
     @Bean
@@ -60,17 +83,4 @@ public class StreamingAutoConfiguration {
         return factory;
     }
 
-    @Bean
-    @ConditionalOnMissingBean(name = "redisTemplate")
-    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, String> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory);
-        StringRedisSerializer serializer = new StringRedisSerializer();
-        template.setKeySerializer(serializer);
-        template.setValueSerializer(serializer);
-        template.setHashKeySerializer(serializer);
-        template.setHashValueSerializer(serializer);
-        template.afterPropertiesSet();
-        return template;
-    }
 }
