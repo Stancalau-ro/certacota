@@ -31,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -289,7 +288,7 @@ public class TransactionServiceImpl implements TransactionService {
     private List<StreamState> getActiveStreamsWithFallback(String accountId) {
         try {
             return streamRegistry.getActiveStreams(accountId);
-        } catch (DataAccessResourceFailureException e) {
+        } catch (RedisUnavailableException e) {
             log.warn("Redis unavailable during debit floor check for account {}: {}", accountId, e.getMessage());
             if (streamingTransactionRepository.existsByAccountIdAndStatus(accountId, StreamingTransaction.ACTIVE)) {
                 throw new RedisUnavailableException(

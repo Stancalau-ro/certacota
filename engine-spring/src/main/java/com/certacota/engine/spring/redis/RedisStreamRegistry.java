@@ -24,7 +24,6 @@ public class RedisStreamRegistry implements StreamRegistry {
 
     private static final String STREAM_KEY_PREFIX = "stream:";
     private static final String ACCOUNT_STREAMS_PREFIX = "account-streams:";
-    private static final long JVM_START_NANO = System.nanoTime();
 
     private final StringRedisTemplate redisTemplate;
 
@@ -88,8 +87,7 @@ public class RedisStreamRegistry implements StreamRegistry {
                 .filter(Objects::nonNull)
                 .toList();
         } catch (RedisConnectionFailureException e) {
-            log.warn("Redis unavailable during getActiveStreams for accountId={}; returning empty list", accountId);
-            return Collections.emptyList();
+            throw new RedisUnavailableException("Redis unavailable during getActiveStreams for accountId=" + accountId + ": " + e.getMessage());
         }
     }
 
@@ -103,7 +101,4 @@ public class RedisStreamRegistry implements StreamRegistry {
         }
     }
 
-    public static boolean startedAtNanoFromCurrentJvm(long storedNano) {
-        return storedNano >= JVM_START_NANO;
-    }
 }
