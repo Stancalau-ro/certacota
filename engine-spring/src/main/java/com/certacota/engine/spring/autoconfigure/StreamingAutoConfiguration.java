@@ -106,13 +106,20 @@ public class StreamingAutoConfiguration {
     public RedisConnectionFactory sentinelConnectionFactory(TokenEngineProperties properties) {
         RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration()
             .master(properties.getRedis().getSentinelMaster());
+        // WR-03: use lastIndexOf(':') to support IPv6 addresses and give a clear error on bad format
         for (String node : properties.getRedis().getSentinelNodes().split(",")) {
-            String[] parts = node.trim().split(":");
-            sentinelConfig.sentinel(parts[0], Integer.parseInt(parts[1]));
+            String trimmed = node.trim();
+            int colonIdx = trimmed.lastIndexOf(':');
+            if (colonIdx < 1) {
+                throw new IllegalStateException(
+                    "Invalid sentinel node format (expected host:port): " + trimmed);
+            }
+            String host = trimmed.substring(0, colonIdx);
+            int port = Integer.parseInt(trimmed.substring(colonIdx + 1));
+            sentinelConfig.sentinel(host, port);
         }
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(sentinelConfig);
-        factory.afterPropertiesSet();
-        return factory;
+        // WR-02: do not call afterPropertiesSet() manually; Spring manages the bean lifecycle
+        return new LettuceConnectionFactory(sentinelConfig);
     }
 
 }
