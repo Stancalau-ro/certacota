@@ -39,7 +39,8 @@ public final class StreamSettlementCalculator {
     }
 
     public static BigDecimal clampToAvailableBalance(BigDecimal projected, BigDecimal accountBalance, BigDecimal effectiveFloor) {
-        BigDecimal available = accountBalance.subtract(effectiveFloor);
+        BigDecimal available = accountBalance.subtract(effectiveFloor)
+            .max(BigDecimal.ZERO);
         return projected.min(available);
     }
 }
