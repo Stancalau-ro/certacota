@@ -11,9 +11,11 @@ public interface StreamRegistry {
 
     Optional<StreamState> get(String streamId);
 
-    void remove(String streamId, String accountId);
+    void remove(String streamId, String accountId, List<String> tags);
 
     List<StreamState> getActiveStreams(String accountId);
 
     boolean hasActiveStreams(String accountId);
+
+    List<StreamState> getStreamsByTag(String tag);
 }

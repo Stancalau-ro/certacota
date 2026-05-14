@@ -19,7 +19,11 @@ class ArithmeticTest {
             System.nanoTime(),
             true,
             minimumAmount,
-            increment
+            increment,
+            java.util.Collections.emptyList(),
+            null,
+            null,
+            null
         );
     }
 

@@ -1,11 +1,15 @@
 package com.certacota.engine.core.domain;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,6 +18,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Entity
@@ -68,4 +73,21 @@ public class StreamingTransaction {
     @Convert(converter = MetadataConverter.class)
     @Column(name = "metadata")
     private Map<String, Object> metadata;
+
+    @Column(name = "to_account_id")
+    private String toAccountId;
+
+    @Column(name = "rake_rate", precision = 38, scale = 18)
+    private BigDecimal rakeRate;
+
+    @Column(name = "platform_account_id")
+    private String platformAccountId;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "stream_tags",
+        joinColumns = @JoinColumn(name = "stream_id", referencedColumnName = "stream_id")
+    )
+    @Column(name = "tag")
+    private List<String> tags;
 }

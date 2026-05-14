@@ -1,4 +1,6 @@
 package com.certacota.engine.spring.event;
 
-public record StreamSettledEvent(String streamId, String accountId) {
+import java.util.List;
+
+public record StreamSettledEvent(String streamId, String accountId, List<String> tags) {
 }

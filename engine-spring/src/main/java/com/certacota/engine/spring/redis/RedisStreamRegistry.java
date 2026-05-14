@@ -63,12 +63,31 @@ public class RedisStreamRegistry implements StreamRegistry {
     }
 
     @Override
-    public void remove(String streamId, String accountId) {
+    public void remove(String streamId, String accountId, List<String> tags) {
         try {
             redisTemplate.delete(STREAM_KEY_PREFIX + streamId);
             redisTemplate.opsForSet().remove(ACCOUNT_STREAMS_PREFIX + accountId, streamId);
         } catch (RedisConnectionFailureException e) {
             log.warn("Redis unavailable during stream removal for streamId={}; startup reconciliation will resync", streamId);
+        }
+    }
+
+    @Override
+    public List<StreamState> getStreamsByTag(String tag) {
+        try {
+            Set<String> streamIds = redisTemplate.opsForSet().members(ACCOUNT_STREAMS_PREFIX + tag);
+            if (streamIds == null || streamIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return streamIds.stream()
+                .map(id -> {
+                    Map<Object, Object> fields = redisTemplate.opsForHash().entries(STREAM_KEY_PREFIX + id);
+                    return fields.isEmpty() ? null : StreamState.fromRedis(id, fields);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+        } catch (RedisConnectionFailureException e) {
+            throw new RedisUnavailableException("Redis unavailable during getStreamsByTag for tag=" + tag + ": " + e.getMessage());
         }
     }
 

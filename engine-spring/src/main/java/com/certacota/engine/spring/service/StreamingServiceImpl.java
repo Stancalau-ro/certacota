@@ -157,7 +157,11 @@ public class StreamingServiceImpl implements StreamingService {
             System.nanoTime(),
             true,
             request.minimumAmount(),
-            request.increment()
+            request.increment(),
+            request.tags() != null ? request.tags() : java.util.Collections.emptyList(),
+            request.toAccountId(),
+            request.rakeRate(),
+            request.platformAccountId()
         );
         streamRegistry.register(state);
 
@@ -236,7 +240,7 @@ public class StreamingServiceImpl implements StreamingService {
 
         // Publish event so Redis removal and scheduler cancellation happen AFTER the Postgres
         // transaction commits — prevents torn state if the transaction rolls back (CR-02).
-        eventPublisher.publishEvent(new StreamSettledEvent(streamId, state.accountId()));
+        eventPublisher.publishEvent(new StreamSettledEvent(streamId, state.accountId(), state.tags()));
 
         return new StopStreamResponse(clampedAmount, stoppedAt, reason);
     }
@@ -245,7 +249,7 @@ public class StreamingServiceImpl implements StreamingService {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void onStreamSettled(StreamSettledEvent event) {
         autoTerminationScheduler.cancel(event.streamId());
-        streamRegistry.remove(event.streamId(), event.accountId());
+        streamRegistry.remove(event.streamId(), event.accountId(), event.tags());
     }
 
     @Override

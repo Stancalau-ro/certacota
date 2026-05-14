@@ -1,6 +1,8 @@
 package com.certacota.engine.core.domain;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public record StreamState(
@@ -11,7 +13,11 @@ public record StreamState(
     long startedAtNano,
     boolean startedAtNanoFromCurrentJvm,
     BigDecimal minimumAmount,
-    BigDecimal increment
+    BigDecimal increment,
+    List<String> tags,
+    String toAccountId,
+    BigDecimal rakeRate,
+    String platformAccountId
 ) {
 
     public static StreamState fromRedis(String streamId, Map<Object, Object> fields) {
@@ -26,6 +32,24 @@ public record StreamState(
         String incrementStr = (String) fields.get("increment");
         BigDecimal increment = (incrementStr == null || incrementStr.isEmpty()) ? null : new BigDecimal(incrementStr);
 
+        String tagsStr = (String) fields.getOrDefault("tags", "");
+        List<String> tags = (tagsStr == null || tagsStr.isEmpty())
+            ? Collections.emptyList()
+            : List.of(tagsStr.split(","));
+
+        String toAccountId = (String) fields.get("toAccountId");
+        if (toAccountId != null && toAccountId.isEmpty()) {
+            toAccountId = null;
+        }
+
+        String rakeRateStr = (String) fields.get("rakeRate");
+        BigDecimal rakeRate = (rakeRateStr == null || rakeRateStr.isEmpty()) ? null : new BigDecimal(rakeRateStr);
+
+        String platformAccountId = (String) fields.get("platformAccountId");
+        if (platformAccountId != null && platformAccountId.isEmpty()) {
+            platformAccountId = null;
+        }
+
         return new StreamState(
             streamId,
             accountId,
@@ -34,7 +58,11 @@ public record StreamState(
             startedAtNano,
             false,
             minimumAmount,
-            increment
+            increment,
+            tags,
+            toAccountId,
+            rakeRate,
+            platformAccountId
         );
     }
 
@@ -47,7 +75,11 @@ public record StreamState(
             0L,
             false,
             txn.getMinimumAmount(),
-            txn.getIncrement()
+            txn.getIncrement(),
+            txn.getTags() != null ? txn.getTags() : Collections.emptyList(),
+            txn.getToAccountId(),
+            txn.getRakeRate(),
+            txn.getPlatformAccountId()
         );
     }
 }
