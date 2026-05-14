@@ -33,6 +33,8 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -288,6 +290,7 @@ public class StreamingServiceImpl implements StreamingService {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(Ordered.LOWEST_PRECEDENCE)
     public void onApplicationReady() {
         log.info("Starting up: reconciling ACTIVE streaming transactions from Postgres into Redis");
         List<StreamingTransaction> activeTransactions = streamingTransactionRepository.findByStatus(StreamingTransaction.ACTIVE);
