@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Accounts, balance floor, idempotency, audit log, and observability scaffold (completed 2026-05-13)
 - [x] **Phase 2: Discrete Transactions** - Credits, debits, floor enforcement, concurrency correctness, open metadata, and rake on discrete transactions (completed 2026-05-13)
-- [ ] **Phase 3: Streaming Transactions** - Rate-based drain, mathematical projection settlement, in-memory StreamRegistry, forward balance estimation, minimum amount, increment billing, and auto-termination
+- [x] **Phase 3: Streaming Transactions** - Rate-based drain, mathematical projection settlement, in-memory StreamRegistry, forward balance estimation, minimum amount, increment billing, and auto-termination (completed 2026-05-14)
 - [ ] **Phase 4: Tags, Rake on Streaming, and Threshold Events** - Tag grouping, atomic multi-stream settlement, three-way rake splits on streaming transactions, and threshold crossing detection
 - [ ] **Phase 5: External Event Emission** - Transactional outbox pattern with at-least-once delivery
 - [ ] **Phase 6: Dual Packaging** - Module split into engine-core / engine-spring / engine-service; embedding verification
@@ -144,7 +144,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
-| 3. Streaming Transactions | 4/4 | Verifying | - |
+| 3. Streaming Transactions | 4/4 | Complete   | 2026-05-14 |
 | 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |
