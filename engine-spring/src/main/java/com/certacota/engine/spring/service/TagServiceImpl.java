@@ -99,6 +99,16 @@ public class TagServiceImpl implements TagService {
 
         List<StreamState> candidates = streamRegistry.getStreamsByTag(tag);
 
+        // WR-04: if Redis tag set is empty (crash recovery gap or partial unavailability),
+        // fall back to Postgres to find ACTIVE streams for this tag.
+        if (candidates.isEmpty()) {
+            log.warn("Redis tag set for '{}' is empty; falling back to DB query for active streams", tag);
+            List<String> dbStreamIds = streamingTransactionRepository.findActiveStreamIdsByTag(tag);
+            candidates = dbStreamIds.stream()
+                .flatMap(id -> streamRegistry.get(id).stream())
+                .toList();
+        }
+
         List<EndByTagResponse.SettledStream> settled = new ArrayList<>();
         int skippedCount = 0;
 
