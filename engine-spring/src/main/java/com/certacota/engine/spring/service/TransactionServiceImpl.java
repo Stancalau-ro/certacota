@@ -106,15 +106,11 @@ public class TransactionServiceImpl implements TransactionService {
             .recordedAt(OffsetDateTime.now())
             .build());
 
-        if (request.tags() != null && !request.tags().isEmpty()) {
-            List<String> sortedTags = request.tags().stream().sorted().toList();
-            for (String tag : sortedTags) {
-                TagCommittedTotals totals = tagCommittedTotalsRepository.findWithLock(tag)
-                    .orElseGet(() -> TagCommittedTotals.zero(tag));
-                totals.addCreditedRecipient(request.amount());
-                tagCommittedTotalsRepository.save(totals);
-            }
-        }
+        // CR-04: Plain external credits are not "recipient credits" in the rake-accounting model.
+        // Recording them via addCreditedRecipient causes totalRaked = totalDebited - totalCreditedRecipient
+        // to go negative whenever pure credits exceed transfers on the same tag.
+        // Tags on credit transactions are stored on the discrete_transaction row for auditability
+        // but do not update tag_committed_totals.
 
         PostTransactionResponse response = PostTransactionResponse.from(txn, account.getBalance());
         storeIdempotencyKey(request.idempotencyKey(), "DISCRETE_CREDIT", response);
