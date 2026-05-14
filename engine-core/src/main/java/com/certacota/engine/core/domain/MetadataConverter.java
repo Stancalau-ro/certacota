@@ -30,7 +30,7 @@ public class MetadataConverter implements AttributeConverter<Map<String, Object>
         try {
             return MAPPER.readValue(dbData, MAP_TYPE);
         } catch (Exception e) {
-            throw new IllegalStateException("Cannot deserialize metadata: " + e.getMessage(), e);
+            throw new IllegalArgumentException("Cannot deserialize metadata from JSON string", e);
         }
     }
 }
