@@ -64,13 +64,6 @@
 - [ ] **RAKE-03**: Engine supports zero-rake (spread-only), full-rake, and hybrid configurations
 - [ ] **RAKE-04**: Rake arithmetic is balanced: debit to from-account equals sum of credits (enforced by DB check constraint)
 
-### Threshold Events
-
-- [ ] **EVT-01**: Caller can register a threshold on a participant account (a token balance target, drain or accumulation direction)
-- [ ] **EVT-02**: Caller can register a threshold on a tag (a tag aggregate target, for tags opted in to this feature)
-- [ ] **EVT-03**: Engine detects threshold crossing exactly once, even under concurrent discrete transactions or simultaneous stream settlements against the same account or tag
-- [ ] **EVT-04**: Engine emits a threshold event when a crossing is detected; the event carries the account or tag identifier, the threshold value, and the open metadata of the triggering transaction
-
 ### Open Metadata
 
 - [ ] **META-01**: Every transaction (discrete and streaming) accepts a caller-supplied key-value metadata map; metadata is immutable after creation
@@ -78,7 +71,7 @@
 
 ### External Event Emission
 
-- [ ] **EMIT-01**: Engine emits a domain event for every significant ledger operation via the transactional outbox pattern (account created, transaction posted, stream started/stopped, end-by-tag completed, threshold crossed)
+- [ ] **EMIT-01**: Engine emits a domain event for every significant ledger operation via the transactional outbox pattern (account created, transaction posted, stream started/stopped, end-by-tag completed)
 - [ ] **EMIT-02**: Outbox events are written inside the same DB transaction as the ledger operation — never outside it
 - [ ] **EMIT-03**: Engine provides at least one delivery mechanism for outbox events in v1 (polling endpoint or webhook dispatch)
 
@@ -98,6 +91,13 @@
 ### Tags
 
 - **TAG-HIST-01**: Historical tag aggregate query (tag total earned over a past time window) served from audit log for evicted or completed tags
+
+### Threshold Events
+
+- **EVT-01**: Caller can register a threshold on a participant account (a token balance target, drain or accumulation direction)
+- **EVT-02**: Caller can register a threshold on a tag (a tag aggregate target)
+- **EVT-03**: Engine detects threshold crossing exactly once, even under concurrent discrete transactions or simultaneous stream settlements against the same account or tag
+- **EVT-04**: Engine emits a threshold event when a crossing is detected; the event carries the account or tag identifier, the threshold value, and the open metadata of the triggering transaction
 
 ### Observability
 
@@ -162,10 +162,10 @@
 | RAKE-02 | Phase 4 | Pending |
 | RAKE-03 | Phase 4 | Pending |
 | RAKE-04 | Phase 4 | Pending |
-| EVT-01 | Phase 4 | Pending |
-| EVT-02 | Phase 4 | Pending |
-| EVT-03 | Phase 4 | Pending |
-| EVT-04 | Phase 4 | Pending |
+| EVT-01 | v2 | Deferred |
+| EVT-02 | v2 | Deferred |
+| EVT-03 | v2 | Deferred |
+| EVT-04 | v2 | Deferred |
 | EMIT-01 | Phase 5 | Pending |
 | EMIT-02 | Phase 5 | Pending |
 | EMIT-03 | Phase 5 | Pending |
@@ -174,8 +174,8 @@
 | PKG-03 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 48 total
-- Mapped to phases: 48
+- v1 requirements: 44 total (EVT-01–04 moved to v2 — 2026-05-14)
+- Mapped to phases: 44
 - Unmapped: 0 ✓
 
 ---

@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation** - Accounts, balance floor, idempotency, audit log, and observability scaffold (completed 2026-05-13)
 - [x] **Phase 2: Discrete Transactions** - Credits, debits, floor enforcement, concurrency correctness, open metadata, and rake on discrete transactions (completed 2026-05-13)
 - [x] **Phase 3: Streaming Transactions** - Rate-based drain, mathematical projection settlement, in-memory StreamRegistry, forward balance estimation, minimum amount, increment billing, and auto-termination (completed 2026-05-14)
-- [ ] **Phase 4: Tags, Rake on Streaming, and Threshold Events** - Tag grouping, atomic multi-stream settlement, three-way rake splits on streaming transactions, and threshold crossing detection
+- [ ] **Phase 4: Tags and Rake on Streaming** - Tag grouping, atomic multi-stream settlement, three-way rake splits on streaming transactions, and tag aggregate queries
 - [ ] **Phase 5: External Event Emission** - Transactional outbox pattern with at-least-once delivery
 - [ ] **Phase 6: Dual Packaging** - Module split into engine-core / engine-spring / engine-service; embedding verification
 
@@ -99,17 +99,16 @@ Cross-cutting constraints:
 - BigDecimal with `RoundingMode.DOWN` for all rate arithmetic; nanoTime for same-JVM precision, wall-clock millis for cross-pod/post-restart elapsed
 - Redis failure: 503 on stream start/stop/estimation and discrete debit with active streams; discrete credits always allowed
 
-### Phase 4: Tags, Rake on Streaming, and Threshold Events
-**Goal**: Streaming and discrete transactions carry tags that aggregate in real time; rake splits streaming transfers three ways atomically; threshold crossings are detected exactly once under concurrency
+### Phase 4: Tags and Rake on Streaming
+**Goal**: Streaming and discrete transactions carry tags that aggregate in real time; rake splits streaming transfers three ways atomically
 **Mode:** mvp
 **Depends on**: Phase 3
-**Requirements**: TAG-01, TAG-02, TAG-03, TAG-04, TAG-05, TAG-06, RAKE-02, RAKE-03, RAKE-04, EVT-01, EVT-02, EVT-03, EVT-04
+**Requirements**: TAG-01, TAG-02, TAG-03, TAG-04, TAG-05, TAG-06, RAKE-02, RAKE-03, RAKE-04
 **Success Criteria** (what must be TRUE):
   1. A streaming transaction created with tags can be stopped individually or as part of a bulk end-by-tag operation; all matched streams settle in a single DB transaction; the `tag_committed_totals` row is updated inside the same DB transaction as each settlement
-  2. A tag aggregate query returns committed total (Postgres-backed) plus in-flight projection (sum of rate x elapsed for all active streams carrying that tag) without a full table scan; a discrete transaction carrying a tag contributes its posted amount to the tag committed total
+  2. A tag aggregate query returns committed total (Postgres-backed) plus in-flight projection (sum of rate x elapsed for all active streams carrying that tag) without a full table scan; a discrete transaction carrying a tag contributes its posted amount to the tag committed total; the response separates totalDebited, totalCreditedRecipient, and derived totalRaked on both the committed and in-flight sides
   3. A rake-enabled streaming transaction executes as an atomic three-way debit/credit/credit on settlement; the debit to the from-account equals the sum of credits (enforced by DB check constraint); zero-rake, full-rake, and hybrid configurations all produce balanced arithmetic
-  4. A threshold registered on an account or tag fires exactly once when the crossing is detected, even under concurrent discrete transactions or simultaneous stream settlements against the same account or tag; the emitted threshold event carries the account or tag identifier, the threshold value, and the open metadata of the triggering transaction
-  5. Tag cache entries are evicted by TTL after the configured inactivity period; a background job cleans up `tag_committed_totals` rows keyed on `last_activity_at`
+  4. Tag cache entries are evicted by TTL after the configured inactivity period; a background job cleans up `tag_committed_totals` rows keyed on `last_activity_at`
 **Plans**: TBD
 **UI hint**: no
 
@@ -119,7 +118,7 @@ Cross-cutting constraints:
 **Depends on**: Phase 4
 **Requirements**: EMIT-01, EMIT-02, EMIT-03
 **Success Criteria** (what must be TRUE):
-  1. Account creation, transaction posting, stream start/stop, end-by-tag completion, and threshold crossing each produce an outbox row written inside the same DB transaction as the ledger operation — never in a separate write
+  1. Account creation, transaction posting, stream start/stop, and end-by-tag completion each produce an outbox row written inside the same DB transaction as the ledger operation — never in a separate write
   2. A Testcontainers integration test confirms that simulating a crash between outbox write and delivery leaves the outbox row durable and re-deliverable; no event is lost and no duplicate ledger write occurs
   3. At least one delivery mechanism (polling endpoint or webhook dispatch) is operational and delivers outbox events to a caller-controlled consumer in the integration test
 **Plans**: TBD
@@ -145,6 +144,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Foundation | 3/3 | Complete   | 2026-05-13 |
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
 | 3. Streaming Transactions | 4/4 | Complete   | 2026-05-14 |
-| 4. Tags, Rake on Streaming, and Threshold Events | 0/TBD | Not started | - |
+| 4. Tags and Rake on Streaming | 0/TBD | Not started | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |
