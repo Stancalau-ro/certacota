@@ -61,10 +61,12 @@ public class AutoTerminationScheduler implements ApplicationListener<Application
         if (ratePerSecond.compareTo(BigDecimal.ZERO) <= 0) {
             return Long.MAX_VALUE;
         }
-        BigDecimal timeToExhaustionSeconds = estimatedBalance.subtract(effectiveFloor)
-            .divide(ratePerSecond, 3, RoundingMode.DOWN)
-            .multiply(BigDecimal.valueOf(1000));
-        return timeToExhaustionSeconds.max(BigDecimal.ZERO).longValue();
+        BigDecimal availableTokens = estimatedBalance.subtract(effectiveFloor);
+        BigDecimal secondsToExhaustion = availableTokens.divide(ratePerSecond, 3, RoundingMode.DOWN);
+        long delayMillis = secondsToExhaustion.max(BigDecimal.ZERO)
+            .multiply(BigDecimal.valueOf(1000L))
+            .longValue();
+        return delayMillis;
     }
 
     private void startConsumerThread() {
