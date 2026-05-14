@@ -9,6 +9,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+
 import static net.javacrumbs.shedlock.core.LockAssert.assertLocked;
 
 @Component
@@ -35,9 +37,14 @@ public class TagTtlCleanupJob {
 
     // Package-private so TagTtlCleanupJobIT can invoke the DELETE logic directly.
     int doCleanup() {
+        // CR-03: compute cutoff in Java for cross-DB portability (no Postgres-specific interval arithmetic).
+        // WR-05: exclude tags with active streams so long-running streams don't lose their aggregate row.
+        OffsetDateTime cutoff = OffsetDateTime.now()
+            .minusHours(properties.getTags().getTtlHours());
         int deleted = jdbcTemplate.update(
-            "DELETE FROM tag_committed_totals WHERE last_activity_at < NOW() - (? * INTERVAL '1 hour')",
-            properties.getTags().getTtlHours());
+            "DELETE FROM tag_committed_totals WHERE last_activity_at < ?"
+                + " AND NOT EXISTS (SELECT 1 FROM stream_tags st WHERE st.tag = tag_committed_totals.tag)",
+            cutoff);
         log.info("Tag TTL cleanup: deleted {} stale tag_committed_totals rows", deleted);
         return deleted;
     }
