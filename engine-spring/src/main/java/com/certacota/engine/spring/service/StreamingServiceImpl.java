@@ -24,10 +24,13 @@ import com.certacota.engine.core.repository.StreamingTransactionRepository;
 import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.StreamingService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
+import com.certacota.engine.spring.scheduler.AutoTerminationScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +54,10 @@ public class StreamingServiceImpl implements StreamingService {
     private final TokenEngineProperties properties;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
+
+    @Lazy
+    @Autowired
+    private AutoTerminationScheduler autoTerminationScheduler;
 
     @Override
     public StartStreamResponse startStream(StartStreamRequest request) {
@@ -137,6 +144,13 @@ public class StreamingServiceImpl implements StreamingService {
         );
         streamRegistry.register(state);
 
+        BigDecimal effectiveFloorForScheduler = account.getBalanceFloor() != null
+            ? account.getBalanceFloor()
+            : properties.getBalanceFloor();
+        long exhaustionDelayMillis = AutoTerminationScheduler.calculateExhaustionDelayMillis(
+            estimatedBalance, effectiveFloorForScheduler, request.ratePerSecond());
+        autoTerminationScheduler.enqueue(request.streamId(), exhaustionDelayMillis);
+
         StartStreamResponse response = StartStreamResponse.from(txn);
         storeIdempotencyKey(request.idempotencyKey(), "STREAM_START", response);
         return response;
@@ -195,6 +209,7 @@ public class StreamingServiceImpl implements StreamingService {
                 .build());
         });
 
+        autoTerminationScheduler.cancel(streamId);
         streamRegistry.remove(streamId, state.accountId());
 
         return new StopStreamResponse(clampedAmount, stoppedAt, reason);
@@ -272,6 +287,9 @@ public class StreamingServiceImpl implements StreamingService {
                     autoTerminated++;
                 } else {
                     streamRegistry.register(state);
+                    long delayMillis = AutoTerminationScheduler.calculateExhaustionDelayMillis(
+                        estimatedBalance, effectiveFloor, txn.getRatePerSecond());
+                    autoTerminationScheduler.enqueue(txn.getStreamId(), delayMillis);
                     reconciled++;
                 }
             } catch (Exception e) {
