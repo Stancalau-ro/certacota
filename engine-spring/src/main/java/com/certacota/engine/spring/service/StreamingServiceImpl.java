@@ -17,10 +17,12 @@ import com.certacota.engine.core.exception.AccountClosedException;
 import com.certacota.engine.core.exception.AccountNotFoundException;
 import com.certacota.engine.core.exception.StreamAlreadyActiveException;
 import com.certacota.engine.core.exception.StreamNotFoundException;
+import com.certacota.engine.core.domain.TagCommittedTotals;
 import com.certacota.engine.core.repository.AccountRepository;
 import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
 import com.certacota.engine.core.repository.StreamingTransactionRepository;
+import com.certacota.engine.core.repository.TagCommittedTotalsRepository;
 import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.StreamingService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
@@ -44,6 +46,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -60,6 +63,7 @@ public class StreamingServiceImpl implements StreamingService {
     private final TokenEngineProperties properties;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final TagCommittedTotalsRepository tagCommittedTotalsRepository;
 
     @Lazy
     @Autowired
@@ -137,6 +141,7 @@ public class StreamingServiceImpl implements StreamingService {
             .increment(request.increment())
             .startedAt(OffsetDateTime.now())
             .idempotencyKey(request.idempotencyKey())
+            .tags(request.tags() != null ? request.tags() : Collections.emptyList())
             .build());
 
         auditLogRepository.save(BalanceAuditLog.builder()
@@ -226,6 +231,10 @@ public class StreamingServiceImpl implements StreamingService {
             .settledAmount(clampedAmount)
             .reason(reason)
             .idempotencyKey(txn.getIdempotencyKey())
+            .tags(txn.getTags())
+            .toAccountId(txn.getToAccountId())
+            .rakeRate(txn.getRakeRate())
+            .platformAccountId(txn.getPlatformAccountId())
             .build();
         streamingTransactionRepository.save(settled);
 
@@ -237,6 +246,17 @@ public class StreamingServiceImpl implements StreamingService {
             .balanceAfter(account.getBalance())
             .recordedAt(stoppedAt)
             .build());
+
+        // Phase 4: update tag_committed_totals inside same @Transactional (TAG-03, D-08)
+        // For non-rake streams (plan 02), total_credited_recipient = settled amount (rake=0)
+        List<String> sortedTags = state.tags().stream().sorted().toList();
+        for (String tag : sortedTags) {
+            TagCommittedTotals totals = tagCommittedTotalsRepository.findWithLock(tag)
+                .orElseGet(() -> TagCommittedTotals.zero(tag));
+            totals.addDebit(clampedAmount);
+            totals.addCreditedRecipient(clampedAmount);
+            tagCommittedTotalsRepository.save(totals);
+        }
 
         // Publish event so Redis removal and scheduler cancellation happen AFTER the Postgres
         // transaction commits — prevents torn state if the transaction rolls back (CR-02).

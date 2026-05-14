@@ -6,6 +6,7 @@ import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.DiscreteTransactionRepository;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
 import com.certacota.engine.core.repository.StreamingTransactionRepository;
+import com.certacota.engine.core.repository.TagCommittedTotalsRepository;
 import com.certacota.engine.core.service.AccountService;
 import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.TransactionService;
@@ -50,9 +51,11 @@ public class TokenEngineAutoConfiguration {
             StreamingTransactionRepository streamingTransactionRepository,
             StreamRegistry streamRegistry,
             TokenEngineProperties properties,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            TagCommittedTotalsRepository tagCommittedTotalsRepository) {
         return new TransactionServiceImpl(
             accountRepository, discreteTransactionRepository, auditLogRepository,
-            idempotencyKeyRepository, streamingTransactionRepository, streamRegistry, properties, objectMapper);
+            idempotencyKeyRepository, streamingTransactionRepository, streamRegistry, properties, objectMapper,
+            tagCommittedTotalsRepository);
     }
 }

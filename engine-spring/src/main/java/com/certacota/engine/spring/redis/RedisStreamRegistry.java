@@ -24,6 +24,7 @@ public class RedisStreamRegistry implements StreamRegistry {
 
     private static final String STREAM_KEY_PREFIX = "stream:";
     private static final String ACCOUNT_STREAMS_PREFIX = "account-streams:";
+    private static final String TAG_STREAMS_PREFIX = "tag-streams:";
 
     private final StringRedisTemplate redisTemplate;
 
@@ -41,9 +42,19 @@ public class RedisStreamRegistry implements StreamRegistry {
             fields.put("minimumAmount", state.minimumAmount() != null ? state.minimumAmount().toPlainString() : "");
             fields.put("increment", state.increment() != null ? state.increment().toPlainString() : "");
             fields.put("status", "ACTIVE");
+            fields.put("tags", state.tags() != null ? String.join(",", state.tags()) : "");
+            fields.put("toAccountId", state.toAccountId() != null ? state.toAccountId() : "");
+            fields.put("rakeRate", state.rakeRate() != null ? state.rakeRate().toPlainString() : "");
+            fields.put("platformAccountId", state.platformAccountId() != null ? state.platformAccountId() : "");
 
             redisTemplate.opsForHash().putAll(streamKey, fields);
             redisTemplate.opsForSet().add(accountStreamsKey, state.streamId());
+
+            if (state.tags() != null) {
+                for (String tag : state.tags()) {
+                    redisTemplate.opsForSet().add(TAG_STREAMS_PREFIX + tag, state.streamId());
+                }
+            }
         } catch (RedisConnectionFailureException e) {
             throw new RedisUnavailableException("Redis unavailable during stream registration: " + e.getMessage());
         }
@@ -67,27 +78,13 @@ public class RedisStreamRegistry implements StreamRegistry {
         try {
             redisTemplate.delete(STREAM_KEY_PREFIX + streamId);
             redisTemplate.opsForSet().remove(ACCOUNT_STREAMS_PREFIX + accountId, streamId);
+            if (tags != null) {
+                for (String tag : tags) {
+                    redisTemplate.opsForSet().remove(TAG_STREAMS_PREFIX + tag, streamId);
+                }
+            }
         } catch (RedisConnectionFailureException e) {
             log.warn("Redis unavailable during stream removal for streamId={}; startup reconciliation will resync", streamId);
-        }
-    }
-
-    @Override
-    public List<StreamState> getStreamsByTag(String tag) {
-        try {
-            Set<String> streamIds = redisTemplate.opsForSet().members(ACCOUNT_STREAMS_PREFIX + tag);
-            if (streamIds == null || streamIds.isEmpty()) {
-                return Collections.emptyList();
-            }
-            return streamIds.stream()
-                .map(id -> {
-                    Map<Object, Object> fields = redisTemplate.opsForHash().entries(STREAM_KEY_PREFIX + id);
-                    return fields.isEmpty() ? null : StreamState.fromRedis(id, fields);
-                })
-                .filter(Objects::nonNull)
-                .toList();
-        } catch (RedisConnectionFailureException e) {
-            throw new RedisUnavailableException("Redis unavailable during getStreamsByTag for tag=" + tag + ": " + e.getMessage());
         }
     }
 
@@ -120,4 +117,22 @@ public class RedisStreamRegistry implements StreamRegistry {
         }
     }
 
+    @Override
+    public List<StreamState> getStreamsByTag(String tag) {
+        try {
+            Set<String> streamIds = redisTemplate.opsForSet().members(TAG_STREAMS_PREFIX + tag);
+            if (streamIds == null || streamIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return streamIds.stream()
+                .map(id -> {
+                    Map<Object, Object> fields = redisTemplate.opsForHash().entries(STREAM_KEY_PREFIX + id);
+                    return fields.isEmpty() ? null : StreamState.fromRedis(id, fields);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+        } catch (RedisConnectionFailureException e) {
+            throw new RedisUnavailableException("Redis unavailable during getStreamsByTag for tag=" + tag + ": " + e.getMessage());
+        }
+    }
 }

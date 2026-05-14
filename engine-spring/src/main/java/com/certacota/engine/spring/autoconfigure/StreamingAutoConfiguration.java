@@ -5,6 +5,7 @@ import com.certacota.engine.core.repository.AccountRepository;
 import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
 import com.certacota.engine.core.repository.StreamingTransactionRepository;
+import com.certacota.engine.core.repository.TagCommittedTotalsRepository;
 import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.StreamingService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
@@ -65,10 +66,12 @@ public class StreamingAutoConfiguration {
             StreamRegistry streamRegistry,
             TokenEngineProperties properties,
             ObjectMapper objectMapper,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            TagCommittedTotalsRepository tagCommittedTotalsRepository) {
         return new StreamingServiceImpl(
             accountRepository, streamingTransactionRepository, auditLogRepository,
-            idempotencyKeyRepository, streamRegistry, properties, objectMapper, eventPublisher);
+            idempotencyKeyRepository, streamRegistry, properties, objectMapper, eventPublisher,
+            tagCommittedTotalsRepository);
     }
 
     @Bean

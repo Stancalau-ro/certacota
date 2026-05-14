@@ -18,11 +18,13 @@ import com.certacota.engine.core.exception.AccountClosedException;
 import com.certacota.engine.core.exception.AccountNotFoundException;
 import com.certacota.engine.core.exception.BalanceFloorViolationException;
 import com.certacota.engine.core.exception.RedisUnavailableException;
+import com.certacota.engine.core.domain.TagCommittedTotals;
 import com.certacota.engine.core.repository.AccountRepository;
 import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.DiscreteTransactionRepository;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
 import com.certacota.engine.core.repository.StreamingTransactionRepository;
+import com.certacota.engine.core.repository.TagCommittedTotalsRepository;
 import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.TransactionService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
@@ -54,6 +56,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final StreamRegistry streamRegistry;
     private final TokenEngineProperties properties;
     private final ObjectMapper objectMapper;
+    private final TagCommittedTotalsRepository tagCommittedTotalsRepository;
 
     @Lazy
     @Autowired
@@ -89,6 +92,7 @@ public class TransactionServiceImpl implements TransactionService {
             .metadata(request.metadata())
             .idempotencyKey(request.idempotencyKey())
             .postedAt(OffsetDateTime.now())
+            .tags(request.tags() != null ? request.tags() : Collections.emptyList())
             .build());
 
         auditLogRepository.save(BalanceAuditLog.builder()
@@ -101,6 +105,16 @@ public class TransactionServiceImpl implements TransactionService {
             .transactionId(txn.getId())
             .recordedAt(OffsetDateTime.now())
             .build());
+
+        if (request.tags() != null && !request.tags().isEmpty()) {
+            List<String> sortedTags = request.tags().stream().sorted().toList();
+            for (String tag : sortedTags) {
+                TagCommittedTotals totals = tagCommittedTotalsRepository.findWithLock(tag)
+                    .orElseGet(() -> TagCommittedTotals.zero(tag));
+                totals.addCreditedRecipient(request.amount());
+                tagCommittedTotalsRepository.save(totals);
+            }
+        }
 
         PostTransactionResponse response = PostTransactionResponse.from(txn, account.getBalance());
         storeIdempotencyKey(request.idempotencyKey(), "DISCRETE_CREDIT", response);
@@ -158,6 +172,7 @@ public class TransactionServiceImpl implements TransactionService {
             .metadata(request.metadata())
             .idempotencyKey(request.idempotencyKey())
             .postedAt(OffsetDateTime.now())
+            .tags(request.tags() != null ? request.tags() : Collections.emptyList())
             .build());
 
         auditLogRepository.save(BalanceAuditLog.builder()
@@ -170,6 +185,16 @@ public class TransactionServiceImpl implements TransactionService {
             .transactionId(txn.getId())
             .recordedAt(OffsetDateTime.now())
             .build());
+
+        if (request.tags() != null && !request.tags().isEmpty()) {
+            List<String> sortedTags = request.tags().stream().sorted().toList();
+            for (String tag : sortedTags) {
+                TagCommittedTotals totals = tagCommittedTotalsRepository.findWithLock(tag)
+                    .orElseGet(() -> TagCommittedTotals.zero(tag));
+                totals.addDebit(request.amount());
+                tagCommittedTotalsRepository.save(totals);
+            }
+        }
 
         // Reschedule all active streams with updated exhaustion times after balance change (D-27)
         rescheduleActiveStreams(accountId, account.getBalance(), effectiveFloor);
@@ -247,6 +272,7 @@ public class TransactionServiceImpl implements TransactionService {
             .metadata(request.metadata())
             .idempotencyKey(request.idempotencyKey())
             .postedAt(OffsetDateTime.now())
+            .tags(request.tags() != null ? request.tags() : Collections.emptyList())
             .build());
 
         auditLogRepository.save(BalanceAuditLog.builder()
@@ -286,6 +312,17 @@ public class TransactionServiceImpl implements TransactionService {
                 .transactionId(txn.getId())
                 .recordedAt(OffsetDateTime.now())
                 .build());
+        }
+
+        if (request.tags() != null && !request.tags().isEmpty()) {
+            List<String> sortedTags = request.tags().stream().sorted().toList();
+            for (String tag : sortedTags) {
+                TagCommittedTotals totals = tagCommittedTotalsRepository.findWithLock(tag)
+                    .orElseGet(() -> TagCommittedTotals.zero(tag));
+                totals.addDebit(request.amount());
+                totals.addCreditedRecipient(toAccountAmount);
+                tagCommittedTotalsRepository.save(totals);
+            }
         }
 
         PostTransactionResponse response = PostTransactionResponse.from(txn, fromAccount.getBalance());
