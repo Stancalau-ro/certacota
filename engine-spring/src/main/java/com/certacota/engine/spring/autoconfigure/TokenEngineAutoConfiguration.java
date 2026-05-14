@@ -5,7 +5,9 @@ import com.certacota.engine.core.repository.AccountRepository;
 import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.DiscreteTransactionRepository;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
+import com.certacota.engine.core.repository.StreamingTransactionRepository;
 import com.certacota.engine.core.service.AccountService;
+import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.TransactionService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
 import com.certacota.engine.spring.service.AccountServiceImpl;
@@ -29,10 +31,13 @@ public class TokenEngineAutoConfiguration {
             AccountRepository accountRepository,
             BalanceAuditLogRepository auditLogRepository,
             IdempotencyKeyRepository idempotencyKeyRepository,
+            StreamingTransactionRepository streamingTransactionRepository,
+            StreamRegistry streamRegistry,
             TokenEngineProperties properties,
             ObjectMapper objectMapper) {
         return new AccountServiceImpl(
-            accountRepository, auditLogRepository, idempotencyKeyRepository, properties, objectMapper);
+            accountRepository, auditLogRepository, idempotencyKeyRepository,
+            streamingTransactionRepository, streamRegistry, properties, objectMapper);
     }
 
     @Bean
@@ -42,10 +47,12 @@ public class TokenEngineAutoConfiguration {
             DiscreteTransactionRepository discreteTransactionRepository,
             BalanceAuditLogRepository auditLogRepository,
             IdempotencyKeyRepository idempotencyKeyRepository,
+            StreamingTransactionRepository streamingTransactionRepository,
+            StreamRegistry streamRegistry,
             TokenEngineProperties properties,
             ObjectMapper objectMapper) {
         return new TransactionServiceImpl(
             accountRepository, discreteTransactionRepository, auditLogRepository,
-            idempotencyKeyRepository, properties, objectMapper);
+            idempotencyKeyRepository, streamingTransactionRepository, streamRegistry, properties, objectMapper);
     }
 }

@@ -5,18 +5,23 @@ import com.certacota.engine.core.domain.Account;
 import com.certacota.engine.core.domain.AccountStatus;
 import com.certacota.engine.core.domain.BalanceAuditLog;
 import com.certacota.engine.core.domain.IdempotencyKey;
+import com.certacota.engine.core.domain.StreamingTransaction;
 import com.certacota.engine.core.dto.AccountResponse;
 import com.certacota.engine.core.dto.CreateAccountRequest;
 import com.certacota.engine.core.exception.AccountClosedException;
 import com.certacota.engine.core.exception.AccountNotFoundException;
 import com.certacota.engine.core.exception.BalanceFloorViolationException;
+import com.certacota.engine.core.exception.RedisUnavailableException;
 import com.certacota.engine.core.repository.AccountRepository;
 import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
+import com.certacota.engine.core.repository.StreamingTransactionRepository;
 import com.certacota.engine.core.service.AccountService;
+import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.spring.config.TokenEngineProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +37,8 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final BalanceAuditLogRepository auditLogRepository;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
+    private final StreamingTransactionRepository streamingTransactionRepository;
+    private final StreamRegistry streamRegistry;
     private final TokenEngineProperties properties;
     private final ObjectMapper objectMapper;
 
@@ -117,7 +124,20 @@ public class AccountServiceImpl implements AccountService {
             throw new AccountClosedException(accountId);
         }
 
-        // Phase 3 will add: if streamRegistry.hasActiveStreams(accountId) throw AccountClosedException
+        try {
+            boolean hasActiveStreams = streamRegistry.hasActiveStreams(accountId);
+            if (hasActiveStreams) {
+                log.warn("Cannot close account with active streams: {}", accountId);
+                throw new AccountClosedException(accountId);
+            }
+        } catch (DataAccessResourceFailureException e) {
+            log.warn("Redis unavailable during account close check for account {}: {}", accountId, e.getMessage());
+            if (streamingTransactionRepository.existsByAccountIdAndStatus(accountId, StreamingTransaction.ACTIVE)) {
+                throw new RedisUnavailableException(
+                    "Redis unavailable; cannot verify active streams for account " + accountId);
+            }
+        }
+
         account.close();
         Account saved = accountRepository.save(account);
         return AccountResponse.from(saved);

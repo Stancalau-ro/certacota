@@ -30,6 +30,7 @@ public class TokenEngineProperties {
         private String cron = "0 0 2 * * *";
         private String lockAtMostHours = "PT2H";
         private String lockAtLeastMinutes = "PT1M";
+        private int idempotencyTtlHours = 48;
     }
 
     @Getter

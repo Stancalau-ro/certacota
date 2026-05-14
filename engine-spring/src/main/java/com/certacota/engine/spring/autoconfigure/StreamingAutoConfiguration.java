@@ -9,7 +9,9 @@ import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.StreamingService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
 import com.certacota.engine.spring.redis.RedisStreamRegistry;
+import com.certacota.engine.spring.scheduler.AuditArchivalJob;
 import com.certacota.engine.spring.scheduler.AutoTerminationScheduler;
+import com.certacota.engine.spring.scheduler.FallbackSweepJob;
 import com.certacota.engine.spring.service.StreamingServiceImpl;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
@@ -67,6 +69,22 @@ public class StreamingAutoConfiguration {
         return new StreamingServiceImpl(
             accountRepository, streamingTransactionRepository, auditLogRepository,
             idempotencyKeyRepository, streamRegistry, properties, objectMapper, eventPublisher);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FallbackSweepJob fallbackSweepJob(
+            StreamingTransactionRepository streamingTransactionRepository,
+            StreamingService streamingService,
+            AccountRepository accountRepository,
+            TokenEngineProperties properties) {
+        return new FallbackSweepJob(streamingTransactionRepository, streamingService, accountRepository, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AuditArchivalJob auditArchivalJob(JdbcTemplate jdbcTemplate, TokenEngineProperties properties) {
+        return new AuditArchivalJob(jdbcTemplate, properties);
     }
 
     @Bean

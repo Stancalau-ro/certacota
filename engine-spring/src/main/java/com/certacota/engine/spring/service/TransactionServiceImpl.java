@@ -6,6 +6,9 @@ import com.certacota.engine.core.domain.AccountStatus;
 import com.certacota.engine.core.domain.BalanceAuditLog;
 import com.certacota.engine.core.domain.DiscreteTransaction;
 import com.certacota.engine.core.domain.IdempotencyKey;
+import com.certacota.engine.core.domain.StreamSettlementCalculator;
+import com.certacota.engine.core.domain.StreamState;
+import com.certacota.engine.core.domain.StreamingTransaction;
 import com.certacota.engine.core.domain.TransactionType;
 import com.certacota.engine.core.dto.CreditRequest;
 import com.certacota.engine.core.dto.DebitRequest;
@@ -14,20 +17,29 @@ import com.certacota.engine.core.dto.PostTransferRequest;
 import com.certacota.engine.core.exception.AccountClosedException;
 import com.certacota.engine.core.exception.AccountNotFoundException;
 import com.certacota.engine.core.exception.BalanceFloorViolationException;
+import com.certacota.engine.core.exception.RedisUnavailableException;
 import com.certacota.engine.core.repository.AccountRepository;
 import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.DiscreteTransactionRepository;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
+import com.certacota.engine.core.repository.StreamingTransactionRepository;
+import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.TransactionService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
+import com.certacota.engine.spring.scheduler.AutoTerminationScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 @Transactional
@@ -39,8 +51,14 @@ public class TransactionServiceImpl implements TransactionService {
     private final DiscreteTransactionRepository discreteTransactionRepository;
     private final BalanceAuditLogRepository auditLogRepository;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
+    private final StreamingTransactionRepository streamingTransactionRepository;
+    private final StreamRegistry streamRegistry;
     private final TokenEngineProperties properties;
     private final ObjectMapper objectMapper;
+
+    @Lazy
+    @Autowired
+    private AutoTerminationScheduler autoTerminationScheduler;
 
     @Override
     public PostTransactionResponse credit(String accountId, CreditRequest request) {
@@ -109,15 +127,24 @@ public class TransactionServiceImpl implements TransactionService {
             throw new AccountClosedException(accountId);
         }
 
-        BigDecimal resultingBalance = account.getBalance().subtract(request.amount());
         BigDecimal effectiveFloor = account.getBalanceFloor() != null
             ? account.getBalanceFloor()
             : properties.getBalanceFloor();
-        if (resultingBalance.compareTo(effectiveFloor) < 0) {
-            log.warn("Balance floor violation: debit of {} would bring balance to {}, below floor {}",
-                request.amount(), resultingBalance, effectiveFloor);
+
+        // Estimated balance accounts for active streams on this account (D-17)
+        List<StreamState> activeStreams = getActiveStreamsWithFallback(accountId);
+
+        BigDecimal totalProjected = activeStreams.stream()
+            .map(StreamSettlementCalculator::computeProjection)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal estimatedBalance = account.getBalance().subtract(totalProjected);
+
+        BigDecimal resultingEstimatedBalance = estimatedBalance.subtract(request.amount());
+        if (resultingEstimatedBalance.compareTo(effectiveFloor) < 0) {
+            log.warn("Balance floor violation: debit of {} would bring estimated balance to {}, below floor {}",
+                request.amount(), resultingEstimatedBalance, effectiveFloor);
             throw new BalanceFloorViolationException(
-                "Debit of " + request.amount() + " would bring balance to " + resultingBalance
+                "Debit of " + request.amount() + " would bring estimated balance to " + resultingEstimatedBalance
                     + ", below floor " + effectiveFloor);
         }
 
@@ -144,6 +171,9 @@ public class TransactionServiceImpl implements TransactionService {
             .transactionId(txn.getId())
             .recordedAt(OffsetDateTime.now())
             .build());
+
+        // Reschedule all active streams with updated exhaustion times after balance change (D-27)
+        rescheduleActiveStreams(accountId, account.getBalance(), effectiveFloor);
 
         PostTransactionResponse response = PostTransactionResponse.from(txn, account.getBalance());
         storeIdempotencyKey(request.idempotencyKey(), "DISCRETE_DEBIT", response);
@@ -254,6 +284,36 @@ public class TransactionServiceImpl implements TransactionService {
         PostTransactionResponse response = PostTransactionResponse.from(txn, fromAccount.getBalance());
         storeIdempotencyKey(request.idempotencyKey(), "DISCRETE_TRANSFER", response);
         return response;
+    }
+
+    private List<StreamState> getActiveStreamsWithFallback(String accountId) {
+        try {
+            return streamRegistry.getActiveStreams(accountId);
+        } catch (DataAccessResourceFailureException e) {
+            log.warn("Redis unavailable during debit floor check for account {}: {}", accountId, e.getMessage());
+            if (streamingTransactionRepository.existsByAccountIdAndStatus(accountId, StreamingTransaction.ACTIVE)) {
+                throw new RedisUnavailableException(
+                    "Redis unavailable; cannot verify streaming floor for account " + accountId);
+            }
+            return Collections.emptyList();
+        }
+    }
+
+    private void rescheduleActiveStreams(String accountId, BigDecimal committedBalance, BigDecimal effectiveFloor) {
+        try {
+            List<StreamState> activeStreams = streamRegistry.getActiveStreams(accountId);
+            for (StreamState stream : activeStreams) {
+                autoTerminationScheduler.cancel(stream.streamId());
+                BigDecimal projection = StreamSettlementCalculator.computeProjection(stream);
+                BigDecimal estimatedRemainingBalance = committedBalance.subtract(projection);
+                long delayMillis = AutoTerminationScheduler.calculateExhaustionDelayMillis(
+                    estimatedRemainingBalance, effectiveFloor, stream.ratePerSecond());
+                autoTerminationScheduler.enqueue(stream.streamId(), delayMillis);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to reschedule active streams for account {} after debit — fallback sweep will handle: {}",
+                accountId, e.getMessage());
+        }
     }
 
     private void storeIdempotencyKey(String key, String operation, Object response) {
