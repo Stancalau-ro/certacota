@@ -24,6 +24,7 @@ import com.certacota.engine.core.repository.StreamingTransactionRepository;
 import com.certacota.engine.core.service.StreamRegistry;
 import com.certacota.engine.core.service.StreamingService;
 import com.certacota.engine.spring.config.TokenEngineProperties;
+import com.certacota.engine.spring.event.StreamSettledEvent;
 import com.certacota.engine.spring.scheduler.AutoTerminationScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -63,15 +66,26 @@ public class StreamingServiceImpl implements StreamingService {
     public StartStreamResponse startStream(StartStreamRequest request) {
         log.info("Starting stream {} for account {}", request.streamId(), request.accountId());
 
-        Account account = accountRepository.findWithLock(request.accountId())
-            .orElseThrow(() -> new AccountNotFoundException(request.accountId()));
-
+        // Check idempotency BEFORE acquiring the account lock (WR-01)
         var existing = idempotencyKeyRepository
             .findByIdempotencyKeyAndOperation(request.idempotencyKey(), "STREAM_START");
         if (existing.isPresent()) {
             log.info("Returning cached idempotent response for stream start key: {}", request.idempotencyKey());
             return deserialize(existing.get().getResponseBody(), StartStreamResponse.class);
         }
+
+        // Store idempotency key as the FIRST write to prevent duplicate execution under concurrent
+        // identical requests — a second request arriving after this INSERT but before COMMIT will
+        // hit the unique constraint and fail fast rather than creating a duplicate stream (CR-01).
+        IdempotencyKey pendingKey = idempotencyKeyRepository.save(IdempotencyKey.builder()
+            .idempotencyKey(request.idempotencyKey())
+            .operation("STREAM_START")
+            .responseBody("pending")
+            .createdAt(OffsetDateTime.now())
+            .build());
+
+        Account account = accountRepository.findWithLock(request.accountId())
+            .orElseThrow(() -> new AccountNotFoundException(request.accountId()));
 
         if (account.getStatus() == AccountStatus.CLOSED) {
             log.warn("Attempt to start stream on closed account: {}", request.accountId());
@@ -152,7 +166,13 @@ public class StreamingServiceImpl implements StreamingService {
         autoTerminationScheduler.enqueue(request.streamId(), exhaustionDelayMillis);
 
         StartStreamResponse response = StartStreamResponse.from(txn);
-        storeIdempotencyKey(request.idempotencyKey(), "STREAM_START", response);
+        // Update the pending idempotency key with the actual serialized response body
+        try {
+            pendingKey.updateResponseBody(objectMapper.writeValueAsString(response));
+            idempotencyKeyRepository.save(pendingKey);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to update idempotency key response body", e);
+        }
         return response;
     }
 
@@ -182,37 +202,46 @@ public class StreamingServiceImpl implements StreamingService {
         String reason = request.reason() != null ? request.reason() : "stop endpoint call";
         OffsetDateTime stoppedAt = OffsetDateTime.now();
 
-        streamingTransactionRepository.findByStreamId(streamId).ifPresent(txn -> {
-            StreamingTransaction settled = StreamingTransaction.builder()
-                .id(txn.getId())
-                .streamId(txn.getStreamId())
-                .accountId(txn.getAccountId())
-                .status(StreamingTransaction.SETTLED)
-                .ratePerSecond(txn.getRatePerSecond())
-                .minimumAmount(txn.getMinimumAmount())
-                .increment(txn.getIncrement())
-                .startedAt(txn.getStartedAt())
-                .stoppedAt(stoppedAt)
-                .settledAmount(clampedAmount)
-                .reason(reason)
-                .idempotencyKey(txn.getIdempotencyKey())
-                .build();
-            streamingTransactionRepository.save(settled);
+        // Throw if no transaction row exists — silent skip would leave the stream unsettled (CR-05)
+        StreamingTransaction txn = streamingTransactionRepository.findByStreamId(streamId)
+            .orElseThrow(() -> new StreamNotFoundException(streamId));
 
-            auditLogRepository.save(BalanceAuditLog.builder()
-                .accountId(account.getId())
-                .operation("STREAMING_SETTLE")
-                .amount(clampedAmount)
-                .balanceBefore(balanceBefore)
-                .balanceAfter(account.getBalance())
-                .recordedAt(stoppedAt)
-                .build());
-        });
+        StreamingTransaction settled = StreamingTransaction.builder()
+            .id(txn.getId())
+            .streamId(txn.getStreamId())
+            .accountId(txn.getAccountId())
+            .status(StreamingTransaction.SETTLED)
+            .ratePerSecond(txn.getRatePerSecond())
+            .minimumAmount(txn.getMinimumAmount())
+            .increment(txn.getIncrement())
+            .startedAt(txn.getStartedAt())
+            .stoppedAt(stoppedAt)
+            .settledAmount(clampedAmount)
+            .reason(reason)
+            .idempotencyKey(txn.getIdempotencyKey())
+            .build();
+        streamingTransactionRepository.save(settled);
 
-        autoTerminationScheduler.cancel(streamId);
-        streamRegistry.remove(streamId, state.accountId());
+        auditLogRepository.save(BalanceAuditLog.builder()
+            .accountId(account.getId())
+            .operation("STREAMING_SETTLE")
+            .amount(clampedAmount)
+            .balanceBefore(balanceBefore)
+            .balanceAfter(account.getBalance())
+            .recordedAt(stoppedAt)
+            .build());
+
+        // Publish event so Redis removal and scheduler cancellation happen AFTER the Postgres
+        // transaction commits — prevents torn state if the transaction rolls back (CR-02).
+        eventPublisher.publishEvent(new StreamSettledEvent(streamId, state.accountId()));
 
         return new StopStreamResponse(clampedAmount, stoppedAt, reason);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onStreamSettled(StreamSettledEvent event) {
+        autoTerminationScheduler.cancel(event.streamId());
+        streamRegistry.remove(event.streamId(), event.accountId());
     }
 
     @Override
@@ -308,19 +337,6 @@ public class StreamingServiceImpl implements StreamingService {
             long elapsedMillis = System.currentTimeMillis() - state.startedAtEpochMillis();
             return BigDecimal.valueOf(elapsedMillis)
                 .divide(BigDecimal.valueOf(1000L), 18, RoundingMode.DOWN);
-        }
-    }
-
-    private void storeIdempotencyKey(String key, String operation, Object response) {
-        try {
-            idempotencyKeyRepository.save(IdempotencyKey.builder()
-                .idempotencyKey(key)
-                .operation(operation)
-                .responseBody(objectMapper.writeValueAsString(response))
-                .createdAt(OffsetDateTime.now())
-                .build());
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to persist idempotency key", e);
         }
     }
 
