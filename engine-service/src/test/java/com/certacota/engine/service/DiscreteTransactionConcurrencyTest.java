@@ -73,7 +73,7 @@ class DiscreteTransactionConcurrencyTest {
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
 
-        String txnUrl = "http://localhost:" + port + "/api/v1/transactions";
+        String txnUrl = "http://localhost:" + port + "/api/v1/accounts/concurrent-debit-001/debit";
 
         for (int i = 0; i < n; i++) {
             final int index = i;
@@ -83,8 +83,6 @@ class DiscreteTransactionConcurrencyTest {
                     HttpHeaders headers = new HttpHeaders();
                     headers.setContentType(MediaType.APPLICATION_JSON);
                     Map<String, Object> body = new HashMap<>();
-                    body.put("accountId", "concurrent-debit-001");
-                    body.put("type", "DEBIT");
                     body.put("amount", amount);
                     body.put("idempotencyKey", "concurrent-key-" + index);
                     ResponseEntity<String> response = restTemplate.exchange(

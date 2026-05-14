@@ -49,7 +49,8 @@
       "Bash(node .claude/get-shit-done/bin/gsd-sdk.cjs query init.phase-op 1)",
       "Bash(node .claude/get-shit-done/bin/gsd-tools.cjs init phase-op 1)",
       "Bash(node .claude/get-shit-done/bin/gsd-tools.cjs state.record-session --stopped-at \"Phase 1 context gathered\" --resume-file \".planning/phases/01-foundation/01-CONTEXT.md\")",
-      "Skill(gsd:code-review)"
+      "Skill(gsd:code-review)",
+      "WebFetch(domain:stancalau.ro)"
     ],
     "deny": [],
     "ask": []

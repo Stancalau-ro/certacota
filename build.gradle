@@ -17,4 +17,43 @@ subprojects {
     repositories {
         mavenCentral()
     }
+
+    dependencies {
+        compileOnly 'org.jspecify:jspecify:1.0.0'
+    }
+
+    def mainJavaSrcDir = layout.projectDirectory.dir("src/main/java")
+    def packageInfoDir = layout.buildDirectory.dir("generated/sources/package-info/main/java")
+
+    tasks.register('generatePackageInfo') {
+        inputs.dir(mainJavaSrcDir).optional()
+        outputs.dir(packageInfoDir)
+
+        doLast {
+            def src = mainJavaSrcDir.asFile
+            def out = packageInfoDir.get().asFile
+            out.deleteDir()
+            out.mkdirs()
+
+            if (!src.exists()) return
+
+            def packages = new TreeSet<String>()
+            src.eachFileRecurse(groovy.io.FileType.FILES) { File f ->
+                if (f.name.endsWith('.java') && f.name != 'package-info.java') {
+                    def rel = src.toPath().relativize(f.parentFile.toPath()).toString()
+                    if (rel) packages << rel.replace(File.separator, '.')
+                }
+            }
+
+            packages.each { String pkg ->
+                def dir = new File(out, pkg.replace('.', File.separator))
+                dir.mkdirs()
+                new File(dir, 'package-info.java').text = \
+                    "@NullMarked\npackage ${pkg};\n\nimport org.jspecify.annotations.NullMarked;\n"
+            }
+        }
+    }
+
+    sourceSets.main.java.srcDir(packageInfoDir)
+    tasks.named('compileJava').configure { dependsOn('generatePackageInfo') }
 }

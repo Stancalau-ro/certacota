@@ -7,11 +7,10 @@ Feature: Rake-enabled debit transactions
     And an account "rake-from" exists with balance 1000.00
     And an account "rake-to" exists with balance 0.00
     And an account "rake-platform" exists with balance 0.00
-    And rake is configured with rate 0.20 for transaction type "private_show" using metadata key "transaction_type" and platform account "rake-platform"
-    When I post a DEBIT of 100.00 from account "rake-from" to account "rake-to" with metadata '{"transaction_type":"private_show"}' and idempotency key "rake-key-001"
+    When I post a DEBIT of 200.00 from account "rake-from" to account "rake-to" with rake rate 0.10 platform account "rake-platform" and idempotency key "rake-key-001"
     Then the response status is 201
-    And account "rake-from" has committed balance 900.00
-    And account "rake-to" has committed balance 80.00
+    And account "rake-from" has committed balance 800.00
+    And account "rake-to" has committed balance 180.00
     And account "rake-platform" has committed balance 20.00
 
   Scenario: Zero rake rate transfers full amount with no platform cut
@@ -19,12 +18,12 @@ Feature: Rake-enabled debit transactions
     And no account with id "norake-to" exists
     And an account "norake-from" exists with balance 500.00
     And an account "norake-to" exists with balance 0.00
-    When I post a DEBIT of 100.00 from account "norake-from" to account "norake-to" with metadata '{"transaction_type":"unknown_type"}' and idempotency key "norake-key-001"
+    When I post a DEBIT of 100.00 from account "norake-from" to account "norake-to" with rake rate 0.00 platform account "norake-platform" and idempotency key "norake-key-001"
     Then the response status is 201
     And account "norake-from" has committed balance 400.00
     And account "norake-to" has committed balance 100.00
 
-  Scenario: Plain transfer with no metadata credits full amount to destination
+  Scenario: Plain transfer with no rake fields credits full amount to destination
     Given no account with id "transfer-from" exists
     And no account with id "transfer-to" exists
     And an account "transfer-from" exists with balance 200.00

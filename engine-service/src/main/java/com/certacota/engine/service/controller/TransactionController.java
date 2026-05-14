@@ -1,8 +1,7 @@
 package com.certacota.engine.service.controller;
 
-import com.certacota.engine.core.domain.TransactionType;
-import com.certacota.engine.core.dto.PostTransactionRequest;
 import com.certacota.engine.core.dto.PostTransactionResponse;
+import com.certacota.engine.core.dto.PostTransferRequest;
 import com.certacota.engine.core.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +23,8 @@ public class TransactionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PostTransactionResponse postTransaction(@Valid @RequestBody PostTransactionRequest request) {
-        log.info("Posting {} transaction for account: {}", request.type(), request.accountId());
-        return switch (request.type()) {
-            case CREDIT -> transactionService.credit(request);
-            case DEBIT  -> transactionService.debit(request);
-        };
+    public PostTransactionResponse transfer(@Valid @RequestBody PostTransferRequest request) {
+        log.info("Posting transfer of {} from account: {} to account: {}", request.amount(), request.accountId(), request.toAccountId());
+        return transactionService.transfer(request);
     }
 }

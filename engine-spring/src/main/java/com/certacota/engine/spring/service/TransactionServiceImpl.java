@@ -7,8 +7,10 @@ import com.certacota.engine.core.domain.BalanceAuditLog;
 import com.certacota.engine.core.domain.DiscreteTransaction;
 import com.certacota.engine.core.domain.IdempotencyKey;
 import com.certacota.engine.core.domain.TransactionType;
-import com.certacota.engine.core.dto.PostTransactionRequest;
+import com.certacota.engine.core.dto.CreditRequest;
+import com.certacota.engine.core.dto.DebitRequest;
 import com.certacota.engine.core.dto.PostTransactionResponse;
+import com.certacota.engine.core.dto.PostTransferRequest;
 import com.certacota.engine.core.exception.AccountClosedException;
 import com.certacota.engine.core.exception.AccountNotFoundException;
 import com.certacota.engine.core.exception.BalanceFloorViolationException;
@@ -41,14 +43,10 @@ public class TransactionServiceImpl implements TransactionService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public PostTransactionResponse credit(PostTransactionRequest request) {
-        log.info("Processing CREDIT transaction for account: {}", request.accountId());
-        return doCredit(request);
-    }
-
-    private PostTransactionResponse doCredit(PostTransactionRequest request) {
-        Account account = accountRepository.findWithLock(request.accountId())
-            .orElseThrow(() -> new AccountNotFoundException(request.accountId()));
+    public PostTransactionResponse credit(String accountId, CreditRequest request) {
+        log.info("Processing CREDIT transaction for account: {}", accountId);
+        Account account = accountRepository.findWithLock(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(accountId));
 
         // Idempotency check after lock acquisition to prevent duplicate execution under race conditions
         var existing = idempotencyKeyRepository
@@ -59,8 +57,8 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         if (account.getStatus() == AccountStatus.CLOSED) {
-            log.warn("Attempt to credit closed account: {}", request.accountId());
-            throw new AccountClosedException(request.accountId());
+            log.warn("Attempt to credit closed account: {}", accountId);
+            throw new AccountClosedException(accountId);
         }
 
         BigDecimal balanceBefore = account.getBalance();
@@ -68,7 +66,7 @@ public class TransactionServiceImpl implements TransactionService {
         accountRepository.save(account);
 
         DiscreteTransaction txn = discreteTransactionRepository.save(DiscreteTransaction.builder()
-            .accountId(request.accountId())
+            .accountId(accountId)
             .type(TransactionType.CREDIT)
             .amount(request.amount())
             .metadata(request.metadata())
@@ -93,14 +91,10 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public PostTransactionResponse debit(PostTransactionRequest request) {
-        log.info("Processing DEBIT transaction for account: {}", request.accountId());
-        return doDebit(request);
-    }
-
-    private PostTransactionResponse doDebit(PostTransactionRequest request) {
-        Account account = accountRepository.findWithLock(request.accountId())
-            .orElseThrow(() -> new AccountNotFoundException(request.accountId()));
+    public PostTransactionResponse debit(String accountId, DebitRequest request) {
+        log.info("Processing DEBIT transaction for account: {}", accountId);
+        Account account = accountRepository.findWithLock(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(accountId));
 
         // Idempotency check after lock acquisition to prevent duplicate execution under race conditions
         var existing = idempotencyKeyRepository
@@ -111,8 +105,8 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         if (account.getStatus() == AccountStatus.CLOSED) {
-            log.warn("Attempt to debit closed account: {}", request.accountId());
-            throw new AccountClosedException(request.accountId());
+            log.warn("Attempt to debit closed account: {}", accountId);
+            throw new AccountClosedException(accountId);
         }
 
         BigDecimal resultingBalance = account.getBalance().subtract(request.amount());
@@ -127,21 +121,12 @@ public class TransactionServiceImpl implements TransactionService {
                     + ", below floor " + effectiveFloor);
         }
 
-        BigDecimal rakeRate = properties.getRake().getRateFor(request.metadata());
-
-        if (request.toAccountId() != null) {
-            if (request.toAccountId().isBlank()) {
-                throw new IllegalArgumentException("toAccountId must not be blank when provided");
-            }
-            return doDebitWithRake(request, account, rakeRate);
-        }
-
         BigDecimal balanceBefore = account.getBalance();
         account.debit(request.amount());
         accountRepository.save(account);
 
         DiscreteTransaction txn = discreteTransactionRepository.save(DiscreteTransaction.builder()
-            .accountId(request.accountId())
+            .accountId(accountId)
             .type(TransactionType.DEBIT)
             .amount(request.amount())
             .metadata(request.metadata())
@@ -165,19 +150,38 @@ public class TransactionServiceImpl implements TransactionService {
         return response;
     }
 
-    private PostTransactionResponse doDebitWithRake(PostTransactionRequest request, Account fromAccount, BigDecimal rakeRate) {
+    @Override
+    public PostTransactionResponse transfer(PostTransferRequest request) {
+        log.info("Processing transfer of {} from account: {} to account: {}", request.amount(), request.accountId(), request.toAccountId());
+        Account fromAccount = accountRepository.findWithLock(request.accountId())
+            .orElseThrow(() -> new AccountNotFoundException(request.accountId()));
+
+        // Idempotency check after lock acquisition to prevent duplicate execution under race conditions
+        var existing = idempotencyKeyRepository
+            .findByIdempotencyKeyAndOperation(request.idempotencyKey(), "DISCRETE_TRANSFER");
+        if (existing.isPresent()) {
+            log.info("Returning cached idempotent response for key: {}", request.idempotencyKey());
+            return deserialize(existing.get().getResponseBody(), PostTransactionResponse.class);
+        }
+
+        if (fromAccount.getStatus() == AccountStatus.CLOSED) {
+            log.warn("Attempt to transfer from closed account: {}", request.accountId());
+            throw new AccountClosedException(request.accountId());
+        }
+
         BigDecimal effectiveFloor = fromAccount.getBalanceFloor() != null
             ? fromAccount.getBalanceFloor()
             : properties.getBalanceFloor();
         BigDecimal resultingBalance = fromAccount.getBalance().subtract(request.amount());
         if (resultingBalance.compareTo(effectiveFloor) < 0) {
-            log.warn("Balance floor violation in rake path: debit of {} would bring balance to {}, below floor {}",
+            log.warn("Balance floor violation: transfer of {} would bring balance to {}, below floor {}",
                 request.amount(), resultingBalance, effectiveFloor);
             throw new BalanceFloorViolationException(
-                "Debit of " + request.amount() + " would bring balance to " + resultingBalance
+                "Transfer of " + request.amount() + " would bring balance to " + resultingBalance
                     + ", below floor " + effectiveFloor);
         }
 
+        BigDecimal rakeRate = request.rakeRate() != null ? request.rakeRate() : BigDecimal.ZERO;
         BigDecimal rakeAmount = request.amount().multiply(rakeRate).setScale(18, RoundingMode.DOWN);
         BigDecimal toAccountAmount = request.amount().subtract(rakeAmount);
 
@@ -185,11 +189,10 @@ public class TransactionServiceImpl implements TransactionService {
         Account toAccount = accountRepository.findWithLock(request.toAccountId())
             .orElseThrow(() -> new AccountNotFoundException(request.toAccountId()));
 
-        String platformAccountId = properties.getRake().getPlatformAccountId();
         Account platformAccount = null;
-        if (platformAccountId != null && rakeAmount.compareTo(BigDecimal.ZERO) > 0) {
-            platformAccount = accountRepository.findWithLock(platformAccountId)
-                .orElseThrow(() -> new AccountNotFoundException(platformAccountId));
+        if (request.platformAccountId() != null && rakeAmount.compareTo(BigDecimal.ZERO) > 0) {
+            platformAccount = accountRepository.findWithLock(request.platformAccountId())
+                .orElseThrow(() -> new AccountNotFoundException(request.platformAccountId()));
         }
 
         BigDecimal fromBalanceBefore = fromAccount.getBalance();
@@ -211,7 +214,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         auditLogRepository.save(BalanceAuditLog.builder()
             .accountId(fromAccount.getId())
-            .operation("DISCRETE_DEBIT")
+            .operation("DISCRETE_TRANSFER")
             .amount(request.amount())
             .balanceBefore(fromBalanceBefore)
             .balanceAfter(fromAccount.getBalance())
@@ -249,7 +252,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         PostTransactionResponse response = PostTransactionResponse.from(txn, fromAccount.getBalance());
-        storeIdempotencyKey(request.idempotencyKey(), "DISCRETE_DEBIT", response);
+        storeIdempotencyKey(request.idempotencyKey(), "DISCRETE_TRANSFER", response);
         return response;
     }
 
