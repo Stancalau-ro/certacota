@@ -7,6 +7,7 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import static net.javacrumbs.shedlock.core.LockAssert.assertLocked;
 
@@ -24,6 +25,7 @@ public class AuditArchivalJob {
         lockAtMostFor = "${token-engine.audit.lock-at-most-hours:PT2H}",
         lockAtLeastFor = "${token-engine.audit.lock-at-least-minutes:PT1M}"
     )
+    @Transactional
     public void runArchival() {
         assertLocked();
 
