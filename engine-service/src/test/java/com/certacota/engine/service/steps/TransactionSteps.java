@@ -160,6 +160,23 @@ public class TransactionSteps {
         log.info("DEBIT with metadata response: {} {}", response.getStatusCode(), response.getBody());
     }
 
+    @When("I post a DEBIT of {bigdecimal} from account {string} to account {string} with idempotency key {string}")
+    public void postDebitWithToAccount(BigDecimal amount, String fromAccountId, String toAccountId, String idempotencyKey) {
+        String url = "http://localhost:" + port + "/api/v1/transactions";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("accountId", fromAccountId);
+        body.put("toAccountId", toAccountId);
+        body.put("type", "DEBIT");
+        body.put("amount", amount);
+        body.put("idempotencyKey", idempotencyKey);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+        sharedContext.setLastResponse(response);
+        log.info("DEBIT with toAccount response: {} {}", response.getStatusCode(), response.getBody());
+    }
+
     @When("I post a DEBIT of {bigdecimal} from account {string} to account {string} with metadata {string} and idempotency key {string}")
     public void postDebitWithToAccountAndMetadata(BigDecimal amount, String fromAccountId, String toAccountId, String metadataJson, String idempotencyKey) throws Exception {
         Map<String, Object> metadata = objectMapper.readValue(metadataJson, new TypeReference<Map<String, Object>>() {});
