@@ -50,12 +50,12 @@
 
 ### Tags
 
-- [ ] **TAG-01**: Caller can create a streaming transaction with zero or more string tags; tags are immutable after creation
+- [x] **TAG-01**: Caller can create a streaming transaction with zero or more string tags; tags are immutable after creation
 - [x] **TAG-02**: Caller can end all active streaming transactions matching a given tag in a single atomic operation (all matched streams settle in one DB transaction)
-- [ ] **TAG-03**: Engine maintains a committed total per tag in a `tag_committed_totals` Postgres table; the row is updated inside the same DB transaction as each settlement — never as a separate write
-- [ ] **TAG-04**: Caller can query the real-time aggregate for a tag: committed total (from Postgres-backed cache) plus in-flight projection (sum of rate × elapsed across all active streams carrying that tag)
+- [x] **TAG-03**: Engine maintains a committed total per tag in a `tag_committed_totals` Postgres table; the row is updated inside the same DB transaction as each settlement — never as a separate write
+- [x] **TAG-04**: Caller can query the real-time aggregate for a tag: committed total (from Postgres-backed cache) plus in-flight projection (sum of rate × elapsed across all active streams carrying that tag)
 - [x] **TAG-05**: In-memory tag cache entries are evicted by TTL after configurable inactivity period (default 24h); `tag_committed_totals` rows are cleaned up by a background job keyed on `last_activity_at`
-- [ ] **TAG-06**: A discrete transaction can also carry tags; its posted amount is included in the tag committed total when settled
+- [x] **TAG-06**: A discrete transaction can also carry tags; its posted amount is included in the tag committed total when settled
 
 ### Rake Engine
 
