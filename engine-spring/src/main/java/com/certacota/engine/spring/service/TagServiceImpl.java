@@ -18,6 +18,7 @@ import com.certacota.engine.core.service.StreamingService;
 import com.certacota.engine.core.service.TagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,7 +77,7 @@ public class TagServiceImpl implements TagService {
 
     @Override
     @Transactional
-    public EndByTagResponse endByTag(String tag, String idempotencyKey, String reason) {
+    public EndByTagResponse endByTag(String tag, String idempotencyKey, @Nullable String reason) {
         log.info("End-by-tag for tag={}, idempotencyKey={}", tag, idempotencyKey);
 
         String effectiveReason = reason != null ? reason : "end_by_tag";
