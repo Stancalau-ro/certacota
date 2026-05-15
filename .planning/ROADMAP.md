@@ -130,7 +130,7 @@ Plans:
 **Goal:** Build a standalone integration test suite that exercises the engine under realistic load, high concurrency, large data volumes, and partial failure conditions. Tests are driven by externalised configuration so scenarios can be tuned without code changes. Coverage must include: high-concurrency token flows, large-database stress, and component-failure recovery (transient connection loss and full outage).
 **Requirements**: TBD (derived from CONTEXT.md decisions D-01 through D-21 and Success Criteria SC-1 through SC-5 below)
 **Depends on:** Phase 4
-**Plans:** 4 plans
+**Plans:** 5 plans
 
 **Success Criteria** (what must be TRUE):
 1. Test harness is config-driven — concurrency levels, dataset sizes, and fault-injection parameters are set via files, not hardcoded
@@ -150,8 +150,9 @@ Plans:
 **Wave 2** *(blocked on Wave 0)*
 - [ ] 04.1-03-PLAN.md — Mixed concurrency: MixedConcurrencyIT (per-account organic event lifecycles, hot-account contention modeling, weighted credit/debit/stream events, token conservation across mixed workload)
 
-**Wave 3** *(blocked on Wave 0)*
-- [ ] 04.1-04-PLAN.md — Disaster recovery + large-database stress: DisasterRecoveryIT (Postgres pause/unpause + Redis restart with reconciliation via docker-java client), LargeDbStressIT (auto-built seed image keyed by config, query latency assertions against seeded dataset)
+**Wave 3** *(blocked on Wave 0; plans 04 and 05 run in parallel)*
+- [ ] 04.1-04-PLAN.md — Disaster recovery: DisasterRecoveryIT (Postgres pause/unpause + Redis restart with reconciliation via docker-java client)
+- [ ] 04.1-05-PLAN.md — Large-database stress: LargeDbStressIT (auto-built seed image keyed by config per D-15/D-16, engine boots against seeded image via PostgreSQLContainer + asCompatibleSubstituteFor, query latency assertions against seeded dataset)
 
 ### Phase 5: External Event Emission
 **Goal**: Every significant ledger operation produces a domain event written inside the same DB transaction via the transactional outbox pattern, with at least one delivery mechanism available
@@ -186,6 +187,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 6
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
 | 3. Streaming Transactions | 4/4 | Complete   | 2026-05-14 |
 | 4. Tags and Rake on Streaming | 4/4 | Complete   | 2026-05-14 |
-| 4.1. Performance, Concurrency, DR Test Suite | 0/4 | Planned | - |
+| 4.1. Performance, Concurrency, DR Test Suite | 0/5 | Planned | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |
