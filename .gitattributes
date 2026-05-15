@@ -1,0 +1,2 @@
+# Ensure shell scripts used in Docker containers always have LF line endings
+engine-service/src/test/docker/**/*.sh text eol=lf
