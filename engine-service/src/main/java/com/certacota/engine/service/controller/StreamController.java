@@ -8,6 +8,7 @@ import com.certacota.engine.core.service.StreamingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,7 +36,7 @@ public class StreamController {
     @ResponseStatus(HttpStatus.OK)
     public StopStreamResponse stopStream(
             @PathVariable String streamId,
-            @RequestBody(required = false) StopStreamRequest request) {
+            @Nullable @RequestBody(required = false) StopStreamRequest request) {
         StopStreamRequest effectiveRequest = request != null ? request : new StopStreamRequest(false, "stop endpoint call");
         log.info("Stopping stream {}", streamId);
         return streamingService.stopStream(streamId, effectiveRequest);
