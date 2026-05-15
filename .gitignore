@@ -36,3 +36,7 @@ build/
 *.iml
 *.ipr
 *.iws
+
+# Performance test reports
+target/perf-reports/
+engine-service/target/
