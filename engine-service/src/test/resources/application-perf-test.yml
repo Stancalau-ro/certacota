@@ -1,0 +1,42 @@
+certacota:
+  perf:
+    concurrency:
+      thread-count: 20
+      ramp-up-seconds: 2
+      duration-seconds: 30
+      sessions:
+        count: 10
+        min-duration-ms: 1000
+        max-duration-ms: 5000
+    mixed:
+      accounts: 50
+      duration-seconds: 30
+      sessions:
+        min: 1
+        max: 3
+      credit-interval-ms:
+        min: 200
+        max: 1000
+      credit-amount:
+        min: 1
+        max: 100
+      debit-interval-ms:
+        min: 200
+        max: 1000
+      debit-amount:
+        min: 1
+        max: 100
+      hot-accounts:
+        count: 5
+        contention-multiplier: 3.0
+    stress:
+      accounts: 10000
+      transactions-per-account: 500000
+      max-query-latency-ms: 500
+    end-by-tag:
+      tag-count: 5
+      sessions-per-tag: 10
+      overlap-factor: 0.3
+    dr:
+      postgres-pause-duration-ms: 3000
+      redis-restart-wait-ms: 1000
