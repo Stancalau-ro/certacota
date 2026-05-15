@@ -37,9 +37,27 @@ dependencies {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags 'disaster-recovery', 'performance', 'concurrency'
+    }
     systemProperty 'cucumber.junit-platform.naming-strategy', 'long'
     systemProperty 'cucumber.plugin', 'pretty,html:build/reports/cucumber.html'
+    systemProperty 'api.version', '1.44'
+    environment 'DOCKER_HOST', 'tcp://localhost:2375'
+}
+
+tasks.register('performanceTest', Test) {
+    useJUnitPlatform {
+        includeTags 'performance | concurrency'
+    }
+    systemProperty 'api.version', '1.44'
+    environment 'DOCKER_HOST', 'tcp://localhost:2375'
+}
+
+tasks.register('disasterRecoveryTest', Test) {
+    useJUnitPlatform {
+        includeTags 'disaster-recovery'
+    }
     systemProperty 'api.version', '1.44'
     environment 'DOCKER_HOST', 'tcp://localhost:2375'
 }
