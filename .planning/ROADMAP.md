@@ -125,6 +125,34 @@ Plans:
 - [x] 04-04-PLAN.md — End-by-tag bulk settlement + TagTtlCleanupJob: TagServiceImpl.endByTag full implementation, TokenEngineProperties.TagProperties, ShedLock-guarded scheduled cleanup
 **UI hint**: no
 
+### Phase 04.1: Performance, Concurrency, and Disaster Recovery Integration Test Suite (INSERTED)
+
+**Goal:** Build a standalone integration test suite that exercises the engine under realistic load, high concurrency, large data volumes, and partial failure conditions. Tests are driven by externalised configuration so scenarios can be tuned without code changes. Coverage must include: high-concurrency token flows, large-database stress, and component-failure recovery (transient connection loss and full outage).
+**Requirements**: TBD (derived from CONTEXT.md decisions D-01 through D-21 and Success Criteria SC-1 through SC-5 below)
+**Depends on:** Phase 4
+**Plans:** 4 plans
+
+**Success Criteria** (what must be TRUE):
+1. Test harness is config-driven — concurrency levels, dataset sizes, and fault-injection parameters are set via files, not hardcoded
+2. High-concurrency suite runs N parallel sessions (N configurable) without data corruption or deadlocks
+3. Large-database suite validates query and write performance against a seeded dataset of configurable size
+4. Recovery suite verifies the engine resumes correct state after a simulated DB connection loss (transient) and a full component outage (restart)
+5. All test scenarios produce structured reports that can be diffed across runs to detect regressions
+
+Plans:
+
+**Wave 0**
+- [ ] 04.1-01-PLAN.md — Test infrastructure foundation: PerfTestProperties + application-perf-test.yml, LatencyRecorder + PerfReportWriter utilities, DrContainerHolder static container holder, Gradle performanceTest + disasterRecoveryTest tasks, perf-db Docker scaffold, .gitignore entry for target/perf-reports
+
+**Wave 1** *(blocked on Wave 0)*
+- [ ] 04.1-02-PLAN.md — Concurrency suite: ConcurrentSessionsIT (N parallel streaming sessions with randomised durations), ConcurrentEndByTagIT (concurrent end-by-tag with overlapping tag sets), RakeConcurrencyIT (N rake-enabled streams stopping simultaneously, three-way lock-order verification)
+
+**Wave 2** *(blocked on Wave 0)*
+- [ ] 04.1-03-PLAN.md — Mixed concurrency: MixedConcurrencyIT (per-account organic event lifecycles, hot-account contention modeling, weighted credit/debit/stream events, token conservation across mixed workload)
+
+**Wave 3** *(blocked on Wave 0)*
+- [ ] 04.1-04-PLAN.md — Disaster recovery + large-database stress: DisasterRecoveryIT (Postgres pause/unpause + Redis restart with reconciliation via docker-java client), LargeDbStressIT (auto-built seed image keyed by config, query latency assertions against seeded dataset)
+
 ### Phase 5: External Event Emission
 **Goal**: Every significant ledger operation produces a domain event written inside the same DB transaction via the transactional outbox pattern, with at least one delivery mechanism available
 **Mode:** mvp
@@ -150,7 +178,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -158,5 +186,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
 | 3. Streaming Transactions | 4/4 | Complete   | 2026-05-14 |
 | 4. Tags and Rake on Streaming | 4/4 | Complete   | 2026-05-14 |
+| 4.1. Performance, Concurrency, DR Test Suite | 0/4 | Planned | - |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |
