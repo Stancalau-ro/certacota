@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -36,17 +37,17 @@ public class Account {
     private BigDecimal balance;
 
     @Column(name = "balance_floor", precision = 38, scale = 18)
-    private BigDecimal balanceFloor;
+    @Nullable private BigDecimal balanceFloor;
 
     @Convert(converter = MetadataConverter.class)
     @Column(name = "metadata")
-    private Map<String, Object> metadata;
+    @Nullable private Map<String, Object> metadata;
 
     @Column(name = "created_at", updatable = false)
-    private OffsetDateTime createdAt;
+    @Nullable private OffsetDateTime createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    @Nullable private OffsetDateTime updatedAt;
 
     public void close() {
         this.status = AccountStatus.CLOSED;

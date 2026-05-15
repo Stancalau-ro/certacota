@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -42,10 +43,10 @@ public class BalanceAuditLog {
     private BigDecimal balanceAfter;
 
     @Column(name = "idempotency_key", updatable = false)
-    private String idempotencyKey;
+    @Nullable private String idempotencyKey;
 
     @Column(name = "transaction_id", updatable = false)
-    private Long transactionId;
+    @Nullable private Long transactionId;
 
     @Column(name = "recorded_at", nullable = false, updatable = false)
     private OffsetDateTime recordedAt;

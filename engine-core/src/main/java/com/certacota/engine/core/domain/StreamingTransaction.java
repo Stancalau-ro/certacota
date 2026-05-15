@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -50,44 +51,44 @@ public class StreamingTransaction {
     private BigDecimal ratePerSecond;
 
     @Column(name = "minimum_amount", precision = 38, scale = 18, updatable = false)
-    private BigDecimal minimumAmount;
+    @Nullable private BigDecimal minimumAmount;
 
     @Column(name = "increment", precision = 38, scale = 18, updatable = false)
-    private BigDecimal increment;
+    @Nullable private BigDecimal increment;
 
     @Column(name = "started_at", nullable = false, updatable = false)
     private OffsetDateTime startedAt;
 
     @Column(name = "stopped_at")
-    private OffsetDateTime stoppedAt;
+    @Nullable private OffsetDateTime stoppedAt;
 
     @Column(name = "settled_amount", precision = 38, scale = 18)
-    private BigDecimal settledAmount;
+    @Nullable private BigDecimal settledAmount;
 
     @Column(name = "reason")
-    private String reason;
+    @Nullable private String reason;
 
     @Column(name = "idempotency_key", updatable = false)
-    private String idempotencyKey;
+    @Nullable private String idempotencyKey;
 
     @Convert(converter = MetadataConverter.class)
     @Column(name = "metadata")
-    private Map<String, Object> metadata;
+    @Nullable private Map<String, Object> metadata;
 
     @Column(name = "to_account_id")
-    private String toAccountId;
+    @Nullable private String toAccountId;
 
     @Column(name = "rake_rate", precision = 38, scale = 18)
-    private BigDecimal rakeRate;
+    @Nullable private BigDecimal rakeRate;
 
     @Column(name = "platform_account_id")
-    private String platformAccountId;
+    @Nullable private String platformAccountId;
 
     @Column(name = "to_account_amount", precision = 38, scale = 18)
-    private BigDecimal toAccountAmount;
+    @Nullable private BigDecimal toAccountAmount;
 
     @Column(name = "rake_amount", precision = 38, scale = 18)
-    private BigDecimal rakeAmount;
+    @Nullable private BigDecimal rakeAmount;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(

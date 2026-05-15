@@ -1,5 +1,7 @@
 package com.certacota.engine.core.domain;
 
+import org.jspecify.annotations.Nullable;
+
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
@@ -12,12 +14,12 @@ public record StreamState(
     long startedAtEpochMillis,
     long startedAtNano,
     boolean startedAtNanoFromCurrentJvm,
-    BigDecimal minimumAmount,
-    BigDecimal increment,
+    @Nullable BigDecimal minimumAmount,
+    @Nullable BigDecimal increment,
     List<String> tags,
-    String toAccountId,
-    BigDecimal rakeRate,
-    String platformAccountId
+    @Nullable String toAccountId,
+    @Nullable BigDecimal rakeRate,
+    @Nullable String platformAccountId
 ) {
 
     public static StreamState fromRedis(String streamId, Map<Object, Object> fields) {
