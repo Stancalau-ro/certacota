@@ -142,17 +142,17 @@ Plans:
 Plans:
 
 **Wave 0**
-- [ ] 04.1-01-PLAN.md — Test infrastructure foundation: PerfTestProperties + application-perf-test.yml, LatencyRecorder + PerfReportWriter utilities, DrContainerHolder static container holder, Gradle performanceTest + disasterRecoveryTest tasks, perf-db Docker scaffold, .gitignore entry for target/perf-reports
+- [x] 04.1-01-PLAN.md — Test infrastructure foundation: PerfTestProperties + application-perf-test.yml, LatencyRecorder + PerfReportWriter utilities, DrContainerHolder static container holder, Gradle performanceTest + disasterRecoveryTest tasks, perf-db Docker scaffold, .gitignore entry for target/perf-reports
 
 **Wave 1** *(blocked on Wave 0)*
-- [ ] 04.1-02-PLAN.md — Concurrency suite: ConcurrentSessionsIT (N parallel streaming sessions with randomised durations), ConcurrentEndByTagIT (concurrent end-by-tag with overlapping tag sets), RakeConcurrencyIT (N rake-enabled streams stopping simultaneously, three-way lock-order verification)
+- [x] 04.1-02-PLAN.md — Concurrency suite: ConcurrentSessionsIT (N parallel streaming sessions with randomised durations), ConcurrentEndByTagIT (concurrent end-by-tag with overlapping tag sets), RakeConcurrencyIT (N rake-enabled streams stopping simultaneously, three-way lock-order verification)
 
 **Wave 2** *(blocked on Wave 0)*
-- [ ] 04.1-03-PLAN.md — Mixed concurrency: MixedConcurrencyIT (per-account organic event lifecycles, hot-account contention modeling, weighted credit/debit/stream events, token conservation across mixed workload)
+- [x] 04.1-03-PLAN.md — Mixed concurrency: MixedConcurrencyIT (per-account organic event lifecycles, hot-account contention modeling, weighted credit/debit/stream events, token conservation across mixed workload)
 
 **Wave 3** *(blocked on Wave 0; plans 04 and 05 run in parallel)*
-- [ ] 04.1-04-PLAN.md — Disaster recovery: DisasterRecoveryIT (Postgres pause/unpause + Redis restart with reconciliation via docker-java client)
-- [ ] 04.1-05-PLAN.md — Large-database stress: LargeDbStressIT (auto-built seed image keyed by config per D-15/D-16, engine boots against seeded image via PostgreSQLContainer + asCompatibleSubstituteFor, query latency assertions against seeded dataset)
+- [x] 04.1-04-PLAN.md — Disaster recovery: DisasterRecoveryIT (Postgres pause/unpause + Redis restart with reconciliation via docker-java client)
+- [x] 04.1-05-PLAN.md — Large-database stress: LargeDbStressIT (auto-built seed image keyed by config per D-15/D-16, engine boots against seeded image via PostgreSQLContainer + asCompatibleSubstituteFor, query latency assertions against seeded dataset)
 
 ### Phase 5: External Event Emission
 **Goal**: Every significant ledger operation produces a domain event written inside the same DB transaction via the transactional outbox pattern, with at least one delivery mechanism available
@@ -187,6 +187,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 6
 | 2. Discrete Transactions | 3/3 | Complete   | 2026-05-13 |
 | 3. Streaming Transactions | 4/4 | Complete   | 2026-05-14 |
 | 4. Tags and Rake on Streaming | 4/4 | Complete   | 2026-05-14 |
-| 4.1. Performance, Concurrency, DR Test Suite | 0/5 | Planned | - |
+| 4.1. Performance, Concurrency, DR Test Suite | 5/5 | Complete | 2026-05-15 |
 | 5. External Event Emission | 0/TBD | Not started | - |
 | 6. Dual Packaging | 0/TBD | Not started | - |
