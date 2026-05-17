@@ -49,7 +49,16 @@ tasks.named('test') {
 tasks.register('performanceTest', Test) {
     useJUnitPlatform {
         includeTags 'performance | concurrency'
+        // Exclude the Suite engine so CucumberTestRunner (which has no performance/concurrency
+        // tag but is picked up by junit-platform-suite regardless of tag filtering) does not run.
+        excludeEngines 'junit-platform-suite'
     }
+    // Small defaults so the seeded Postgres image can be built and seeded in seconds during CI.
+    // Override with -Dcertacota.perf.stress.accounts=10000 for a full large-DB run.
+    systemProperty 'certacota.perf.stress.accounts',
+        System.getProperty('certacota.perf.stress.accounts', '100')
+    systemProperty 'certacota.perf.stress.transactions-per-account',
+        System.getProperty('certacota.perf.stress.transactions-per-account', '10000')
     systemProperty 'api.version', '1.44'
     environment 'DOCKER_HOST', 'tcp://localhost:2375'
 }
@@ -57,7 +66,80 @@ tasks.register('performanceTest', Test) {
 tasks.register('disasterRecoveryTest', Test) {
     useJUnitPlatform {
         includeTags 'disaster-recovery'
+        excludeEngines 'junit-platform-suite'
     }
     systemProperty 'api.version', '1.44'
     environment 'DOCKER_HOST', 'tcp://localhost:2375'
+}
+
+// Runs all three test suites in sequence, then prints a pass/fail summary.
+// Each suite uses ignoreFailures=true so one failure does not abort the others.
+// The task itself throws a GradleException at the end if any suite had failures,
+// so the build still exits non-zero when tests fail.
+tasks.register('testAll') {
+    description = 'Run all test suites in sequence and print a console report.'
+    group = 'verification'
+
+    def suites = [
+        [name: 'test',                 label: 'Acceptance (Cucumber + unit)', resultsDir: 'test'],
+        [name: 'performanceTest',      label: 'Performance & Concurrency',    resultsDir: 'performanceTest'],
+        [name: 'disasterRecoveryTest', label: 'Disaster Recovery',            resultsDir: 'disasterRecoveryTest'],
+    ]
+
+    // Allow all suites to run even when one has failing tests.
+    suites.each { suite -> tasks.named(suite.name).configure { ignoreFailures = true } }
+
+    dependsOn suites.collect { tasks.named(it.name) }
+    tasks.named('performanceTest').configure     { mustRunAfter tasks.named('test') }
+    tasks.named('disasterRecoveryTest').configure { mustRunAfter tasks.named('performanceTest') }
+
+    doLast {
+        def bar  = '=' * 66
+        def dash = '-' * 50
+        println "\n${bar}"
+        println "  TEST SUITE REPORT"
+        println bar
+
+        boolean overallPass = true
+
+        suites.each { suite ->
+            def resultsDir = layout.buildDirectory.dir("test-results/${suite.resultsDir}").get().asFile
+            int total = 0, failed = 0, skipped = 0
+            List<String> failedNames = []
+
+            if (resultsDir.exists()) {
+                fileTree(resultsDir).include('**/*.xml').each { f ->
+                    def xml = new XmlSlurper().parse(f)
+                    total   += (xml.@tests   as int)
+                    failed  += (xml.@failures as int) + (xml.@errors as int)
+                    skipped += (xml.@skipped  as int)
+                    xml.testcase.each { tc ->
+                        if (tc.failure.size() > 0 || tc.error.size() > 0) {
+                            failedNames << "    ${tc.@classname}.${tc.@name}"
+                        }
+                    }
+                }
+            }
+
+            int passed = total - failed - skipped
+            String status = (total == 0) ? 'NO RESULTS' : (failed == 0 ? 'PASS' : 'FAIL')
+            if (failed > 0) overallPass = false
+
+            println "\n  ${suite.label}"
+            println "  ${dash}"
+            println "  ${status}  |  tests: ${total}  passed: ${passed}  failed: ${failed}  skipped: ${skipped}"
+            if (failedNames) {
+                println "  Failed:"
+                failedNames.each { println it }
+            }
+        }
+
+        println "\n${bar}"
+        println "  OVERALL: ${overallPass ? 'ALL SUITES PASSED' : 'ONE OR MORE SUITES FAILED'}"
+        println "${bar}\n"
+
+        if (!overallPass) {
+            throw new GradleException('One or more test suites failed — see report above.')
+        }
+    }
 }

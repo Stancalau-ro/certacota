@@ -1,7 +1,6 @@
 package com.certacota.engine.service.perf;
 
 import com.certacota.engine.core.dto.AccountResponse;
-import com.certacota.engine.service.TestcontainersConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -23,6 +21,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -42,7 +41,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration.class)
 @ActiveProfiles({"test", "perf-test"})
 @EnableConfigurationProperties(PerfTestProperties.class)
 @Tag("performance")
@@ -57,8 +55,17 @@ class LargeDbStressIT {
     private static final String IMAGE_NAME = "certacota-perf-db-a" + ACCOUNTS + "-t" + TXN_PER_ACCOUNT;
 
     private static final PostgreSQLContainer<?> seededPostgres;
+    // Not using @Import(TestcontainersConfiguration.class) — its @ServiceConnection Postgres bean
+    // would take precedence over @DynamicPropertySource in Spring Boot 3.1+ (ServiceConnection
+    // provides JdbcConnectionDetails that DataSourceAutoConfiguration prefers over properties).
+    // We own both containers here so @DynamicPropertySource remains authoritative.
+    @SuppressWarnings("resource")
+    private static final GenericContainer<?> redis =
+        new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
+            .withExposedPorts(6379);
 
     static {
+        redis.start();
         try {
             ensureSeedImageExists(IMAGE_NAME, ACCOUNTS, TXN_PER_ACCOUNT);
             DockerImageName seededImage = DockerImageName.parse(IMAGE_NAME)
@@ -75,10 +82,17 @@ class LargeDbStressIT {
     }
 
     @DynamicPropertySource
-    static void registerSeededPostgres(DynamicPropertyRegistry registry) {
+    static void registerContainers(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", seededPostgres::getJdbcUrl);
         registry.add("spring.datasource.username", seededPostgres::getUsername);
         registry.add("spring.datasource.password", seededPostgres::getPassword);
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", () -> String.valueOf(redis.getMappedPort(6379)));
+        // The seeded Postgres has stress_accounts and stress_audit_log but no Flyway history.
+        // baseline-on-migrate=true allows migration of a non-empty schema; baseline-version=0
+        // ensures all migrations (V1 onwards) still run so the full app schema is created.
+        registry.add("spring.flyway.baseline-on-migrate", () -> "true");
+        registry.add("spring.flyway.baseline-version", () -> "0");
     }
 
     @LocalServerPort
@@ -104,13 +118,19 @@ class LargeDbStressIT {
         check.redirectErrorStream(true);
         Process checkProcess = check.start();
         String imageId = new String(checkProcess.getInputStream().readAllBytes()).trim();
-        checkProcess.waitFor();
+        int checkExit = checkProcess.waitFor();
+        if (checkExit != 0) {
+            throw new IllegalStateException(
+                "docker images check failed (exit=" + checkExit + "). Is Docker available?");
+        }
 
         if (!imageId.isEmpty()) {
             return;
         }
 
-        Path dockerDir = Paths.get("engine-service/src/test/docker/perf-db").toAbsolutePath();
+        // Gradle runs test JVM with CWD = engine-service subproject dir, so the path is
+        // relative to engine-service/ — no "engine-service/" prefix needed here.
+        Path dockerDir = Paths.get("src/test/docker/perf-db").toAbsolutePath();
         ProcessBuilder build = new ProcessBuilder(
             "docker", "build",
             "--build-arg", "ACCOUNTS=" + accounts,
@@ -212,7 +232,7 @@ class LargeDbStressIT {
                 .multiply(BigDecimal.valueOf(seededCount));
         }
 
-        BigDecimal delta = initialTokensTotal.subtract(totalFinalBalance);
+        BigDecimal delta = initialTokensTotal.subtract(totalFinalBalance).subtract(totalDebited.get());
         boolean conserved = delta.compareTo(BigDecimal.ZERO) == 0;
 
         boolean latencyUnderCeiling = readLatency.snapshot().p95Ms()

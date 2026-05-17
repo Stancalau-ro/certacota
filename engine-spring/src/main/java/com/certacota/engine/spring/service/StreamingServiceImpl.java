@@ -17,7 +17,6 @@ import com.certacota.engine.core.exception.AccountClosedException;
 import com.certacota.engine.core.exception.AccountNotFoundException;
 import com.certacota.engine.core.exception.StreamAlreadyActiveException;
 import com.certacota.engine.core.exception.StreamNotFoundException;
-import com.certacota.engine.core.domain.TagCommittedTotals;
 import com.certacota.engine.core.repository.AccountRepository;
 import com.certacota.engine.core.repository.BalanceAuditLogRepository;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
@@ -191,6 +190,13 @@ public class StreamingServiceImpl implements StreamingService {
         return response;
     }
 
+    // REQUIRES_NEW ensures each stream settlement commits independently with its own lock scope.
+    // Without this, concurrent endByTag calls holding tag-totals + account locks in different
+    // order across multiple streams deadlock in Postgres. Each REQUIRES_NEW tx releases all
+    // locks on commit, so no circular wait can form across streams.
+    // noRollbackFor allows the caller (endByTag) to catch StreamNotFoundException without the
+    // inner tx marking the outer context rollback-only.
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = StreamNotFoundException.class)
     @Override
     public StopStreamResponse stopStream(String streamId, StopStreamRequest request) {
         log.info("Stopping stream {}", streamId);
@@ -214,6 +220,15 @@ public class StreamingServiceImpl implements StreamingService {
         // state (fromDbRow) never produces rakeAmount=0 when rakeRate is configured in the DB.
         StreamingTransaction txn = streamingTransactionRepository.findByStreamId(streamId)
             .orElseThrow(() -> new StreamNotFoundException(streamId));
+
+        // Guard against double-settlement: a concurrent endByTag call may have acquired the
+        // account lock first, settled this stream, and committed before we got here. The Redis
+        // entry is stale (removal is async via onStreamSettled). Clean up and throw so the caller
+        // treats this as an idempotent skip rather than re-debiting the account.
+        if (StreamingTransaction.SETTLED.equals(txn.getStatus()) || StreamingTransaction.ERROR.equals(txn.getStatus())) {
+            streamRegistry.remove(streamId, state.accountId(), state.tags());
+            throw new StreamNotFoundException(streamId);
+        }
 
         String resolvedToAccountId = state.toAccountId() != null ? state.toAccountId() : txn.getToAccountId();
         BigDecimal resolvedRakeRate = state.rakeRate() != null ? state.rakeRate() : txn.getRakeRate();
@@ -305,15 +320,11 @@ public class StreamingServiceImpl implements StreamingService {
             .recordedAt(stoppedAt)
             .build());
 
-        // Phase 4: update tag_committed_totals inside same @Transactional (TAG-03, D-08)
-        // Phase 4 plan 03: use toAccountAmount (not clampedAmount) so derived totalRaked = totalDebited - totalCreditedRecipient holds
-        List<String> sortedTags = state.tags().stream().sorted().toList();
-        for (String tag : sortedTags) {
-            TagCommittedTotals totals = tagCommittedTotalsRepository.findWithLock(tag)
-                .orElseGet(() -> TagCommittedTotals.zero(tag));
-            totals.addDebit(clampedAmount);
-            totals.addCreditedRecipient(toAccountAmount);
-            tagCommittedTotalsRepository.save(totals);
+        // Phase 4: update tag_committed_totals atomically (TAG-03, D-08).
+        // upsertTotals uses INSERT ... ON CONFLICT DO UPDATE, which is safe under concurrent
+        // REQUIRES_NEW transactions — no phantom-row race possible with a single SQL statement.
+        for (String tag : state.tags()) {
+            tagCommittedTotalsRepository.upsertTotals(tag, clampedAmount, toAccountAmount);
         }
 
         // Publish event so Redis removal and scheduler cancellation happen AFTER the Postgres

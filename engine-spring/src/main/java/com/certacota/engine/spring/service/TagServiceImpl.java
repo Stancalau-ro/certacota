@@ -10,6 +10,7 @@ import com.certacota.engine.core.dto.EndByTagResponse;
 import com.certacota.engine.core.dto.StopStreamRequest;
 import com.certacota.engine.core.dto.StopStreamResponse;
 import com.certacota.engine.core.dto.TagAggregateResponse;
+import com.certacota.engine.core.exception.StreamNotFoundException;
 import com.certacota.engine.core.repository.IdempotencyKeyRepository;
 import com.certacota.engine.core.repository.StreamingTransactionRepository;
 import com.certacota.engine.core.repository.TagCommittedTotalsRepository;
@@ -27,6 +28,7 @@ import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -125,13 +127,27 @@ public class TagServiceImpl implements TagService {
                 skippedCount++;
                 continue;
             }
-            // Propagation REQUIRED: stopStream joins this outer transaction so all stream
-            // settlements share one DB commit. If any inner stopStream throws, the WHOLE
-            // transaction rolls back including all prior settlements and the pending idempotency
-            // key — allowing a clean retry. This is the desired all-or-nothing semantics for
-            // TAG-02 (Pitfall 1 mitigation). Do NOT catch exceptions here.
-            StopStreamResponse resp = streamingService.stopStream(s.streamId(), new StopStreamRequest(false, effectiveReason));
-            settled.add(new EndByTagResponse.SettledStream(s.streamId(), resp.settledAmount()));
+            // stopStream is annotated noRollbackFor=StreamNotFoundException so a concurrent
+            // settlement that removes the stream from Redis before this call does NOT mark the
+            // transaction rollback-only. We catch it here, re-verify the DB status, and skip
+            // idempotently if the stream is already settled — preserving all-or-nothing semantics
+            // for genuine errors while tolerating the overlap race (TAG-02).
+            try {
+                StopStreamResponse resp = streamingService.stopStream(s.streamId(), new StopStreamRequest(false, effectiveReason));
+                settled.add(new EndByTagResponse.SettledStream(s.streamId(), resp.settledAmount()));
+            } catch (StreamNotFoundException e) {
+                // Use scalar status query to bypass the Hibernate L1 entity cache. The outer
+                // endByTag transaction may have loaded the entity as ACTIVE before stopStream's
+                // REQUIRES_NEW tx committed the SETTLED update — findByStreamId would return the
+                // stale cached entity, while this scalar query always hits the DB directly.
+                Optional<String> recheckStatus = streamingTransactionRepository.findStatusByStreamId(s.streamId());
+                if (recheckStatus.isPresent() && (StreamingTransaction.SETTLED.equals(recheckStatus.get()) || StreamingTransaction.ERROR.equals(recheckStatus.get()))) {
+                    skippedCount++;
+                    log.info("Stream {} settled concurrently — skipping idempotently", s.streamId());
+                } else {
+                    throw e;
+                }
+            }
         }
 
         EndByTagResponse response = new EndByTagResponse(settled.size(), skippedCount, settled);

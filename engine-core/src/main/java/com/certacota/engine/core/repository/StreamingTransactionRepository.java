@@ -20,4 +20,10 @@ public interface StreamingTransactionRepository extends JpaRepository<StreamingT
 
     @Query("SELECT st.streamId FROM StreamingTransaction st JOIN st.tags t WHERE t = :tag AND st.status = 'ACTIVE'")
     List<String> findActiveStreamIdsByTag(@Param("tag") String tag);
+
+    // Scalar query — returns status string, not a managed entity, so Hibernate never serves
+    // a stale L1-cached result. Use this after a REQUIRES_NEW stopStream commit to verify
+    // the actual DB status without the outer transaction's first-level cache interfering.
+    @Query("SELECT t.status FROM StreamingTransaction t WHERE t.streamId = :streamId")
+    Optional<String> findStatusByStreamId(@Param("streamId") String streamId);
 }

@@ -34,4 +34,4 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE INDEX IF NOT EXISTS idx_stress_audit_account ON stress_audit_log (account_id);
 EOSQL
 
-echo "perf-db seed.sh completed: seeded ${ACCOUNTS} accounts and $((${ACCOUNTS} * ${TXN_PER_ACCOUNT})) audit-log rows"
+echo "perf-db seed.sh completed: seeded ${ACCOUNTS} accounts and ${ACCOUNTS}x${TXN_PER_ACCOUNT} audit-log rows"
