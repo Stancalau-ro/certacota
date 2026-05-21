@@ -33,10 +33,10 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
 
-    @Column(name = "balance", nullable = false, precision = 38, scale = 18)
+    @Column(name = "balance", nullable = false, precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     private BigDecimal balance;
 
-    @Column(name = "balance_floor", precision = 38, scale = 18)
+    @Column(name = "balance_floor", precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     @Nullable private BigDecimal balanceFloor;
 
     @Convert(converter = MetadataConverter.class)

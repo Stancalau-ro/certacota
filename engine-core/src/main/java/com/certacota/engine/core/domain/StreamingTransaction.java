@@ -47,13 +47,13 @@ public class StreamingTransaction {
     @Column(name = "status", nullable = false)
     private String status;
 
-    @Column(name = "rate_per_second", nullable = false, updatable = false, precision = 38, scale = 18)
+    @Column(name = "rate_per_second", nullable = false, updatable = false, precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     private BigDecimal ratePerSecond;
 
-    @Column(name = "minimum_amount", precision = 38, scale = 18, updatable = false)
+    @Column(name = "minimum_amount", precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE, updatable = false)
     @Nullable private BigDecimal minimumAmount;
 
-    @Column(name = "increment", precision = 38, scale = 18, updatable = false)
+    @Column(name = "increment", precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE, updatable = false)
     @Nullable private BigDecimal increment;
 
     @Column(name = "started_at", nullable = false, updatable = false)
@@ -62,7 +62,7 @@ public class StreamingTransaction {
     @Column(name = "stopped_at")
     @Nullable private OffsetDateTime stoppedAt;
 
-    @Column(name = "settled_amount", precision = 38, scale = 18)
+    @Column(name = "settled_amount", precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     @Nullable private BigDecimal settledAmount;
 
     @Column(name = "reason")
@@ -78,16 +78,16 @@ public class StreamingTransaction {
     @Column(name = "to_account_id")
     @Nullable private String toAccountId;
 
-    @Column(name = "rake_rate", precision = 38, scale = 18)
+    @Column(name = "rake_rate", precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     @Nullable private BigDecimal rakeRate;
 
     @Column(name = "platform_account_id")
     @Nullable private String platformAccountId;
 
-    @Column(name = "to_account_amount", precision = 38, scale = 18)
+    @Column(name = "to_account_amount", precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     @Nullable private BigDecimal toAccountAmount;
 
-    @Column(name = "rake_amount", precision = 38, scale = 18)
+    @Column(name = "rake_amount", precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     @Nullable private BigDecimal rakeAmount;
 
     @ElementCollection(fetch = FetchType.EAGER)

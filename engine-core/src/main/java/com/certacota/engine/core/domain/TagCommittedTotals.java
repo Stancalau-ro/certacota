@@ -26,10 +26,10 @@ public class TagCommittedTotals {
     @Column(name = "tag", nullable = false, updatable = false)
     private String tag;
 
-    @Column(name = "total_debited", nullable = false, precision = 38, scale = 18)
+    @Column(name = "total_debited", nullable = false, precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     private BigDecimal totalDebited;
 
-    @Column(name = "total_credited_recipient", nullable = false, precision = 38, scale = 18)
+    @Column(name = "total_credited_recipient", nullable = false, precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     private BigDecimal totalCreditedRecipient;
 
     @Column(name = "last_activity_at", nullable = false)

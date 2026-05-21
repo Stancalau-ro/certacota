@@ -43,7 +43,7 @@ public class DiscreteTransaction {
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 
-    @Column(name = "amount", nullable = false, updatable = false, precision = 38, scale = 18)
+    @Column(name = "amount", nullable = false, updatable = false, precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     private BigDecimal amount;
 
     @Convert(converter = MetadataConverter.class)

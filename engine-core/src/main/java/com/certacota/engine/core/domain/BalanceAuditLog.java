@@ -33,13 +33,13 @@ public class BalanceAuditLog {
     @Column(name = "operation", nullable = false, updatable = false, length = 50)
     private String operation;
 
-    @Column(name = "amount", nullable = false, updatable = false, precision = 38, scale = 18)
+    @Column(name = "amount", nullable = false, updatable = false, precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     private BigDecimal amount;
 
-    @Column(name = "balance_before", nullable = false, updatable = false, precision = 38, scale = 18)
+    @Column(name = "balance_before", nullable = false, updatable = false, precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     private BigDecimal balanceBefore;
 
-    @Column(name = "balance_after", nullable = false, updatable = false, precision = 38, scale = 18)
+    @Column(name = "balance_after", nullable = false, updatable = false, precision = ColumnConstants.AMOUNT_PRECISION, scale = ColumnConstants.AMOUNT_SCALE)
     private BigDecimal balanceAfter;
 
     @Column(name = "idempotency_key", updatable = false)
